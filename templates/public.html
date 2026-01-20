@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Status - Uptime Monitor{% endblock %}
+
+{% block body %}
+<div class="page">
+    <header class="header">
+        <div class="container header-content">
+            <a href="/" class="logo">UPTIME</a>
+            <nav class="nav">
+                <div class="refresh-indicator">
+                    <div class="refresh-dot"></div>
+                    <span>Live</span>
+                </div>
+                <a href="/login" class="nav-link">Dashboard</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- Status Summary -->
+            <div class="status-summary" id="statusSummary">
+                <div class="status-card">
+                    <div class="status-card-label">Operational</div>
+                    <div class="status-card-value up" id="upCount">--</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-label">Down</div>
+                    <div class="status-card-value down" id="downCount">--</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-label">Total Servers</div>
+                    <div class="status-card-value" id="totalCount">--</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-label">Last Updated</div>
+                    <div class="status-card-value" id="lastUpdated" style="font-size: 1rem;">--</div>
+                </div>
+            </div>
+
+            <!-- Server List -->
+            <div class="section-title">Monitored Services</div>
+            <div class="server-list" id="serverList">
+                <!-- Servers will be loaded here -->
+            </div>
+
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <h3 class="empty-state-title">No servers configured</h3>
+                <p class="empty-state-text">Add servers from the dashboard to start monitoring.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-text">Uptime Monitor v1.0</p>
+        </div>
+    </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API_BASE = '/api';
+    const REFRESH_INTERVAL = 30000; // 30 seconds
+
+    let servers = [];
+    let isInitialLoad = true;
+
+    // Format time ago
+    function timeAgo(date) {
+        if (!date) return 'Never';
+
+        const now = new Date();
+        const past = new Date(date);
+        const seconds = Math.floor((now - past) / 1000);
+
+        if (seconds < 60) return 'Just now';
+        if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+        if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+        return Math.floor(seconds / 86400) + 'd ago';
+    }
+
+    // Format response time
+    function formatResponseTime(ms) {
+        if (!ms) return '--';
+        if (ms < 1000) return Math.round(ms) + 'ms';
+        return (ms / 1000).toFixed(2) + 's';
+    }
+
+    // Format date for tooltip
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // Create uptime bars HTML
+    function createUptimeBars(uptimeBars) {
+        if (!uptimeBars || uptimeBars.length === 0) {
+            return '<div class="uptime-bar-container"><div class="uptime-bar-label">No uptime data available</div></div>';
+        }
+
+        const barsHtml = uptimeBars.map(bar => {
+            const tooltip = `${formatDate(bar.date)}: ${bar.uptime_percentage.toFixed(1)}% (${bar.checks} checks)`;
+            return `<div class="uptime-bar-segment ${bar.status}" data-tooltip="${tooltip}"></div>`;
+        }).join('');
+
+        // Get first and last date for legend
+        const firstDate = formatDate(uptimeBars[0].date);
+        const lastDate = formatDate(uptimeBars[uptimeBars.length - 1].date);
+
+        return `
+            <div class="uptime-bar-container">
+                <div class="uptime-bar">${barsHtml}</div>
+                <div class="uptime-bar-legend">
+                    <span>${firstDate}</span>
+                    <span>${lastDate}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // Create server element
+    function createServerElement(server, index, animate = true) {
+        const statusClass = server.current_status ? server.current_status.toLowerCase() : 'unknown';
+        const statusLabel = server.current_status || 'Unknown';
+
+        const div = document.createElement('div');
+        div.className = animate ? 'server-item entering' : 'server-item';
+        if (animate) {
+            div.style.animationDelay = (index * 50) + 'ms';
+        }
+
+        div.innerHTML = `
+        <div class="server-status ${statusClass}"></div>
+        <div class="server-info">
+            <div class="server-name">${escapeHtml(server.name)}</div>
+            <div class="server-url">${escapeHtml(server.url)} → | ${server.uptime_percentage.toFixed(3)}%</div>
+            ${createUptimeBars(server.uptime_bars)}
+        </div>
+        ${server.logo_url ? `<img src="${escapeHtml(server.logo_url)}" alt="" class="server-logo">` : '<div></div>'}
+        <div class="server-meta">
+            <div class="server-response-time">${formatResponseTime(server.response_time_ms)}</div>
+            <div class="server-last-check">${timeAgo(server.last_ping)}</div>
+            <div class="uptime-bar-percentage" style="margin-top: var(--space-xs);">● ${statusLabel}</div>
+        </div>
+    `;
+
+        return div;
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Update summary counts
+    function updateSummary(servers) {
+        const upCount = servers.filter(s => s.current_status === 'UP').length;
+        const downCount = servers.filter(s => s.current_status === 'DOWN').length;
+
+        document.getElementById('upCount').textContent = upCount;
+        document.getElementById('downCount').textContent = downCount;
+        document.getElementById('totalCount').textContent = servers.length;
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+    }
+
+    // Load servers
+    async function loadServers() {
+        try {
+            // Use the new endpoint with uptime bars
+            const response = await fetch(`${API_BASE}/servers/with-bars?days=30`);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch servers');
+            }
+
+            servers = await response.json();
+
+            const serverList = document.getElementById('serverList');
+            const emptyState = document.getElementById('emptyState');
+
+            if (servers.length === 0) {
+                serverList.style.display = 'none';
+                emptyState.style.display = 'block';
+            } else {
+                serverList.style.display = 'flex';
+                emptyState.style.display = 'none';
+
+                // Clear and rebuild using fragment to avoid flickering
+                const fragment = document.createDocumentFragment();
+                servers.forEach((server, index) => {
+                    fragment.appendChild(createServerElement(server, index, isInitialLoad));
+                });
+
+                serverList.innerHTML = '';
+                serverList.appendChild(fragment);
+
+                // After first load, disable animations for refreshes
+                isInitialLoad = false;
+            }
+
+            updateSummary(servers);
+
+        } catch (error) {
+            console.error('Error loading servers:', error);
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function () {
+        loadServers();
+
+        // Auto-refresh
+        setInterval(loadServers, REFRESH_INTERVAL);
+    });
+</script>
+{% endblock %}

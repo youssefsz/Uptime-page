@@ -1,0 +1,913 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Uptime Monitor{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script
+    src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+{% endblock %}
+
+{% block body %}
+<div class="page">
+    <header class="header">
+        <div class="container header-content">
+            <a href="/" class="logo">UPTIME</a>
+            <nav class="nav">
+                <a href="/" class="nav-link">Status Page</a>
+                <a href="/dashboard" class="nav-link active">Dashboard</a>
+                <button class="btn btn-sm" onclick="openPasswordModal()">Change Password</button>
+                <button class="btn btn-sm" id="logoutBtn">Logout</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+                <div>
+                    <h1>Dashboard</h1>
+                    <p style="margin-top: var(--space-xs);">Manage your monitored servers</p>
+                </div>
+                <div style="display: flex; gap: var(--space-sm);">
+                    <button class="btn btn-reorder" id="reorderBtn" title="Drag to reorder servers">⋮⋮ Reorder</button>
+                    <button class="btn btn-primary" id="addServerBtn">Add Server</button>
+                </div>
+            </div>
+
+            <!-- Status Summary -->
+            <div class="status-summary" id="statusSummary">
+                <div class="status-card">
+                    <div class="status-card-label">Operational</div>
+                    <div class="status-card-value up" id="upCount">--</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-label">Down</div>
+                    <div class="status-card-value down" id="downCount">--</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-label">Avg Response</div>
+                    <div class="status-card-value" id="avgResponse">--</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-label">Uptime 24h</div>
+                    <div class="status-card-value" id="uptime24h">--</div>
+                </div>
+            </div>
+
+            <!-- Server List -->
+            <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Servers</span>
+                <span id="reorderHint" style="font-size: 0.65rem; color: var(--color-up); display: none;">Drag servers
+                    to reorder • Click "Reorder" again to save</span>
+            </div>
+            <div class="server-list" id="serverList">
+                <!-- Servers will be loaded here -->
+            </div>
+
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <h3 class="empty-state-title">No servers yet</h3>
+                <p class="empty-state-text">Add your first server to start monitoring uptime.</p>
+                <button class="btn btn-primary" onclick="openAddModal()">Add Server</button>
+            </div>
+
+            <!-- History Chart -->
+            <div class="chart-container" id="chartContainer" style="display: none;">
+                <div class="chart-header">
+                    <h3 class="chart-title">Response Time History (24h)</h3>
+                    <select class="form-input" id="chartServerSelect" style="width: auto;">
+                        <option value="all">All Servers</option>
+                    </select>
+                </div>
+                <div class="chart-canvas">
+                    <canvas id="responseChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-text">Uptime Monitor v1.0</p>
+        </div>
+    </footer>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="passwordModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Change Password</h3>
+            <button class="modal-close" onclick="closePasswordModal()">&times;</button>
+        </div>
+        <form id="passwordForm">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="currentPassword">Current Password</label>
+                    <input type="password" id="currentPassword" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" class="form-input" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" onclick="closePasswordModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add/Edit Server Modal -->
+<div class="modal-overlay" id="serverModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">Add Server</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <form id="serverForm">
+            <div class="modal-body">
+                <input type="hidden" id="serverId">
+
+                <div class="form-group">
+                    <label class="form-label" for="serverName">Name</label>
+                    <input type="text" id="serverName" class="form-input" placeholder="My Server" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="serverUrl">URL</label>
+                    <input type="url" id="serverUrl" class="form-input" placeholder="https://example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="serverLogo">Logo URL (optional)</label>
+                    <input type="url" id="serverLogo" class="form-input" placeholder="https://example.com/logo.png">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="modalSubmit">Add Server</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Delete Server</h3>
+            <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="deleteServerName"></strong>?</p>
+            <p style="margin-top: var(--space-sm); color: var(--color-gray-500);">This action cannot be undone. All
+                history data will be lost.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn" onclick="closeDeleteModal()">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API_BASE = '/api';
+    const REFRESH_INTERVAL = 30000;
+
+    let servers = [];
+    let currentServerId = null;
+    let chart = null;
+    let isInitialLoad = true;
+    let isReorderMode = false;
+    let draggedElement = null;
+
+    // Get auth token
+    function getToken() {
+        return localStorage.getItem('access_token');
+    }
+
+    // Auth headers
+    function authHeaders() {
+        return {
+            'Authorization': `Bearer ${getToken()}`,
+            'Content-Type': 'application/json'
+        };
+    }
+
+    // Check authentication
+    async function checkAuth() {
+        const token = getToken();
+        if (!token) {
+            window.location.href = '/login';
+            return false;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/auth/verify`, {
+                method: 'POST',
+                headers: authHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Invalid token');
+            }
+
+            return true;
+        } catch (error) {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login';
+            return false;
+        }
+    }
+
+    // Logout
+    function logout() {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+    }
+
+    // Password Modal
+    function openPasswordModal() {
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('passwordModal').classList.add('active');
+    }
+
+    function closePasswordModal() {
+        document.getElementById('passwordModal').classList.remove('active');
+    }
+
+    // Change Password
+    document.getElementById('passwordForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+
+        try {
+            const response = await fetch(`${API_BASE}/auth/password`, {
+                method: 'PUT',
+                headers: authHeaders(),
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Failed to update password');
+            }
+
+            showToast('Password updated successfully');
+            closePasswordModal();
+
+        } catch (error) {
+            console.error('Error changing password:', error);
+            showToast(error.message, 'error');
+        }
+    });
+
+    // Format time ago
+    function timeAgo(date) {
+        if (!date) return 'Never';
+
+        const now = new Date();
+        const past = new Date(date);
+        const seconds = Math.floor((now - past) / 1000);
+
+        if (seconds < 60) return 'Just now';
+        if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+        if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+        return Math.floor(seconds / 86400) + 'd ago';
+    }
+
+    // ... existing functions ...
+
+
+    // Format response time
+    function formatResponseTime(ms) {
+        if (!ms && ms !== 0) return '--';
+        if (ms < 1000) return Math.round(ms) + 'ms';
+        return (ms / 1000).toFixed(2) + 's';
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Format date for tooltip
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // Create uptime bars HTML
+    function createUptimeBars(uptimeBars) {
+        if (!uptimeBars || uptimeBars.length === 0) {
+            return '<div class="uptime-bar-container"><div class="uptime-bar-label">No uptime data</div></div>';
+        }
+
+        const barsHtml = uptimeBars.map(bar => {
+            const tooltip = `${formatDate(bar.date)}: ${bar.uptime_percentage.toFixed(1)}% (${bar.checks} checks)`;
+            return `<div class="uptime-bar-segment ${bar.status}" data-tooltip="${tooltip}"></div>`;
+        }).join('');
+
+        const firstDate = formatDate(uptimeBars[0].date);
+        const lastDate = formatDate(uptimeBars[uptimeBars.length - 1].date);
+
+        return `
+            <div class="uptime-bar-container">
+                <div class="uptime-bar">${barsHtml}</div>
+                <div class="uptime-bar-legend">
+                    <span>${firstDate}</span>
+                    <span>${lastDate}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // Show toast
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<div class="toast-message">${escapeHtml(message)}</div>`;
+
+        container.appendChild(toast);
+
+        setTimeout(() => toast.classList.add('active'), 10);
+
+        setTimeout(() => {
+            toast.classList.remove('active');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // Create server element
+    function createServerElement(server, index, animate = true) {
+        const statusClass = server.current_status ? server.current_status.toLowerCase() : 'unknown';
+
+        const div = document.createElement('div');
+        div.className = animate ? 'server-item entering' : 'server-item';
+        if (animate) {
+            div.style.animationDelay = (index * 50) + 'ms';
+        }
+        div.dataset.serverId = server.id;
+
+        div.innerHTML = `
+        <div class="server-status ${statusClass}"></div>
+        <div class="server-info">
+            <div class="server-name">${escapeHtml(server.name)}</div>
+            <div class="server-url">${escapeHtml(server.url)} → | ${server.uptime_percentage ? server.uptime_percentage.toFixed(3) : '0.000'}%</div>
+            ${createUptimeBars(server.uptime_bars)}
+        </div>
+        ${server.logo_url ? `<img src="${escapeHtml(server.logo_url)}" alt="" class="server-logo">` : '<div></div>'}
+        <div class="server-meta">
+            <div class="server-response-time">${formatResponseTime(server.response_time_ms)}</div>
+            <div class="server-last-check">${timeAgo(server.last_ping)}</div>
+        </div>
+        <div class="server-actions">
+            <button class="btn btn-sm" onclick="pingServer(${server.id})">Ping</button>
+            <button class="btn btn-sm" onclick="editServer(${server.id})">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="confirmDelete(${server.id}, '${escapeHtml(server.name)}')">Delete</button>
+        </div>
+    `;
+
+        return div;
+    }
+
+    // Update summary
+    function updateSummary(servers) {
+        const upCount = servers.filter(s => s.current_status === 'UP').length;
+        const downCount = servers.filter(s => s.current_status === 'DOWN').length;
+
+        const responseTimes = servers
+            .filter(s => s.response_time_ms)
+            .map(s => s.response_time_ms);
+        const avgResponse = responseTimes.length > 0
+            ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
+            : null;
+
+        document.getElementById('upCount').textContent = upCount;
+        document.getElementById('downCount').textContent = downCount;
+        document.getElementById('avgResponse').textContent = formatResponseTime(avgResponse);
+
+        // Calculate 24h uptime (simplified - would need history API)
+        const uptime = servers.length > 0 ? Math.round((upCount / servers.length) * 100) : 0;
+        document.getElementById('uptime24h').textContent = uptime + '%';
+    }
+
+    // Load servers
+    async function loadServers() {
+        try {
+            // Use the new endpoint with uptime bars
+            const response = await fetch(`${API_BASE}/servers/with-bars?days=30`);
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch servers');
+            }
+
+            servers = await response.json();
+
+            const serverList = document.getElementById('serverList');
+            const emptyState = document.getElementById('emptyState');
+            const chartContainer = document.getElementById('chartContainer');
+
+            if (servers.length === 0) {
+                serverList.style.display = 'none';
+                emptyState.style.display = 'block';
+                chartContainer.style.display = 'none';
+            } else {
+                serverList.style.display = 'flex';
+                emptyState.style.display = 'none';
+                chartContainer.style.display = 'block';
+
+                // Update server select
+                const select = document.getElementById('chartServerSelect');
+                const currentVal = select.value;
+                select.innerHTML = '<option value="all">All Servers</option>';
+                servers.forEach(server => {
+                    select.innerHTML += `<option value="${server.id}">${escapeHtml(server.name)}</option>`;
+                });
+                if (currentVal) select.value = currentVal;
+
+                // Load history (initial)
+                if (isInitialLoad) {
+                    loadServerHistory('all');
+                }
+
+                // Clear and rebuild using fragment to avoid flickering
+                const fragment = document.createDocumentFragment();
+                servers.forEach((server, index) => {
+                    fragment.appendChild(createServerElement(server, index, isInitialLoad));
+                });
+
+                serverList.innerHTML = '';
+                serverList.appendChild(fragment);
+
+                // After first load, disable animations for refreshes
+                isInitialLoad = false;
+            }
+
+            updateSummary(servers);
+
+        } catch (error) {
+            console.error('Error loading servers:', error);
+            showToast('Failed to load servers', 'error');
+        }
+    }
+
+    // Add/Edit Modal
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent = 'Add Server';
+        document.getElementById('modalSubmit').textContent = 'Add Server';
+        document.getElementById('serverId').value = '';
+        document.getElementById('serverName').value = '';
+        document.getElementById('serverUrl').value = '';
+        document.getElementById('serverLogo').value = '';
+        document.getElementById('serverModal').classList.add('active');
+    }
+
+    function editServer(id) {
+        const server = servers.find(s => s.id === id);
+        if (!server) return;
+
+        document.getElementById('modalTitle').textContent = 'Edit Server';
+        document.getElementById('modalSubmit').textContent = 'Save Changes';
+        document.getElementById('serverId').value = server.id;
+        document.getElementById('serverName').value = server.name;
+        document.getElementById('serverUrl').value = server.url;
+        document.getElementById('serverLogo').value = server.logo_url || '';
+        document.getElementById('serverModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('serverModal').classList.remove('active');
+    }
+
+    // Delete Modal
+    function confirmDelete(id, name) {
+        currentServerId = id;
+        document.getElementById('deleteServerName').textContent = name;
+        document.getElementById('deleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('active');
+        currentServerId = null;
+    }
+
+    // API Actions
+    async function saveServer(e) {
+        e.preventDefault();
+
+        const id = document.getElementById('serverId').value;
+        const data = {
+            name: document.getElementById('serverName').value,
+            url: document.getElementById('serverUrl').value,
+            logo_url: document.getElementById('serverLogo').value || null
+        };
+
+        try {
+            const url = id ? `${API_BASE}/servers/${id}` : `${API_BASE}/servers`;
+            const method = id ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: authHeaders(),
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save server');
+            }
+
+            closeModal();
+            loadServers();
+            showToast(id ? 'Server updated' : 'Server added');
+
+        } catch (error) {
+            console.error('Error saving server:', error);
+            showToast('Failed to save server', 'error');
+        }
+    }
+
+    async function deleteServer() {
+        if (!currentServerId) return;
+
+        try {
+            const response = await fetch(`${API_BASE}/servers/${currentServerId}`, {
+                method: 'DELETE',
+                headers: authHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete server');
+            }
+
+            closeDeleteModal();
+            loadServers();
+            showToast('Server deleted');
+
+        } catch (error) {
+            console.error('Error deleting server:', error);
+            showToast('Failed to delete server', 'error');
+        }
+    }
+
+    async function pingServer(id) {
+        try {
+            const response = await fetch(`${API_BASE}/servers/${id}/ping`, {
+                method: 'POST',
+                headers: authHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to ping server');
+            }
+
+            const result = await response.json();
+            showToast(`Ping complete: ${result.status} (${formatResponseTime(result.response_time_ms)})`);
+            loadServers();
+
+        } catch (error) {
+            console.error('Error pinging server:', error);
+            showToast('Failed to ping server', 'error');
+        }
+    }
+
+    // Chart
+    const SERVER_COLORS = [
+        '#22c55e', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6',
+        '#ec4899', '#06b6d4', '#10b981', '#f97316', '#6366f1',
+        '#a855f7', '#14b8a6', '#f43f5e', '#fbbf24', '#2dd4bf'
+    ];
+
+    function getChartColor(index) {
+        return SERVER_COLORS[index % SERVER_COLORS.length];
+    }
+
+    async function loadServerHistory(serverId) {
+        const container = document.getElementById('chartContainer');
+        container.classList.add('loading');
+
+        try {
+            const isAll = !serverId || serverId === 'all';
+            const url = isAll
+                ? `${API_BASE}/servers/history/all?hours=24`
+                : `${API_BASE}/servers/${serverId}/history?hours=24`;
+
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error('Failed to load history');
+            }
+
+            const data = await response.json();
+
+            if (chart) chart.destroy();
+
+            const ctx = document.getElementById('responseChart').getContext('2d');
+
+            let datasets = [];
+
+            if (isAll) {
+                // Group datasets by server
+                Object.keys(data).forEach((sId, index) => {
+                    const server = servers.find(s => s.id == sId);
+                    const serverHistory = data[sId];
+                    const color = getChartColor(index);
+
+                    datasets.push({
+                        label: server ? server.name : `Server ${sId}`,
+                        data: serverHistory.map(h => ({
+                            x: h.timestamp,
+                            y: h.response_time_ms
+                        })),
+                        borderColor: color,
+                        backgroundColor: color + '20', // Add transparency
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        spanGaps: true
+                    });
+                });
+            } else {
+                const server = servers.find(s => s.id == serverId);
+                const color = '#22c55e'; // Default for single server or match its index
+
+                datasets.push({
+                    label: server ? server.name : 'Response Time (ms)',
+                    data: data.map(h => ({
+                        x: h.timestamp,
+                        y: h.response_time_ms
+                    })),
+                    borderColor: color,
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    spanGaps: true
+                });
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: isAll,
+                            position: 'bottom',
+                            labels: {
+                                color: '#6b6b6b',
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callback: {
+                                title: function (context) {
+                                    // Use the adapter's formatting or raw date
+                                    return context[0].label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'minute',
+                                displayFormats: {
+                                    minute: 'HH:mm'
+                                },
+                                tooltipFormat: 'PPpp'
+                            },
+                            display: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#6b6b6b',
+                                maxTicksLimit: 8,
+                                source: 'auto'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: '#6b6b6b',
+                                callback: function (value) {
+                                    return value + 'ms';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+        } catch (error) {
+            console.error('Error loading history:', error);
+        } finally {
+            container.classList.remove('loading');
+        }
+    }
+
+    // ============== Drag and Drop Reordering ==============
+
+    function toggleReorderMode() {
+        isReorderMode = !isReorderMode;
+        const reorderBtn = document.getElementById('reorderBtn');
+        const reorderHint = document.getElementById('reorderHint');
+        const serverList = document.getElementById('serverList');
+
+        if (isReorderMode) {
+            reorderBtn.classList.add('active');
+            reorderBtn.textContent = '✓ Save Order';
+            reorderHint.style.display = 'block';
+            serverList.classList.add('sortable-mode');
+            enableDragAndDrop();
+        } else {
+            reorderBtn.classList.remove('active');
+            reorderBtn.textContent = '⋮⋮ Reorder';
+            reorderHint.style.display = 'none';
+            serverList.classList.remove('sortable-mode');
+            disableDragAndDrop();
+            saveServerOrder();
+        }
+    }
+
+    function enableDragAndDrop() {
+        const serverItems = document.querySelectorAll('.server-item');
+        serverItems.forEach(item => {
+            item.draggable = true;
+            item.classList.add('draggable');
+            item.addEventListener('dragstart', handleDragStart);
+            item.addEventListener('dragend', handleDragEnd);
+            item.addEventListener('dragover', handleDragOver);
+            item.addEventListener('dragenter', handleDragEnter);
+            item.addEventListener('dragleave', handleDragLeave);
+            item.addEventListener('drop', handleDrop);
+        });
+    }
+
+    function disableDragAndDrop() {
+        const serverItems = document.querySelectorAll('.server-item');
+        serverItems.forEach(item => {
+            item.draggable = false;
+            item.classList.remove('draggable');
+            item.removeEventListener('dragstart', handleDragStart);
+            item.removeEventListener('dragend', handleDragEnd);
+            item.removeEventListener('dragover', handleDragOver);
+            item.removeEventListener('dragenter', handleDragEnter);
+            item.removeEventListener('dragleave', handleDragLeave);
+            item.removeEventListener('drop', handleDrop);
+        });
+    }
+
+    function handleDragStart(e) {
+        draggedElement = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.innerHTML);
+    }
+
+    function handleDragEnd(e) {
+        this.classList.remove('dragging');
+        document.querySelectorAll('.server-item').forEach(item => {
+            item.classList.remove('drag-over');
+        });
+        draggedElement = null;
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    function handleDragEnter(e) {
+        if (this !== draggedElement) {
+            this.classList.add('drag-over');
+        }
+    }
+
+    function handleDragLeave(e) {
+        this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.stopPropagation();
+        e.preventDefault();
+
+        if (draggedElement !== this) {
+            const serverList = document.getElementById('serverList');
+            const items = Array.from(serverList.querySelectorAll('.server-item'));
+            const draggedIndex = items.indexOf(draggedElement);
+            const dropIndex = items.indexOf(this);
+
+            if (draggedIndex < dropIndex) {
+                this.parentNode.insertBefore(draggedElement, this.nextSibling);
+            } else {
+                this.parentNode.insertBefore(draggedElement, this);
+            }
+        }
+
+        this.classList.remove('drag-over');
+        return false;
+    }
+
+    async function saveServerOrder() {
+        const serverList = document.getElementById('serverList');
+        const items = serverList.querySelectorAll('.server-item');
+
+        const reorderData = Array.from(items).map((item, index) => ({
+            id: parseInt(item.dataset.serverId),
+            display_order: index
+        }));
+
+        try {
+            const response = await fetch(`${API_BASE}/servers/reorder`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ servers: reorderData })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save server order');
+            }
+
+            showToast('Server order saved');
+            // Reload to get updated order from server
+            loadServers();
+
+        } catch (error) {
+            console.error('Error saving server order:', error);
+            showToast('Failed to save server order', 'error');
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async function () {
+        const isAuthenticated = await checkAuth();
+        if (!isAuthenticated) return;
+
+        loadServers();
+
+        // Event listeners
+        document.getElementById('addServerBtn').addEventListener('click', openAddModal);
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+        document.getElementById('serverForm').addEventListener('submit', saveServer);
+        document.getElementById('confirmDeleteBtn').addEventListener('click', deleteServer);
+        document.getElementById('chartServerSelect').addEventListener('change', function (e) {
+            loadServerHistory(e.target.value);
+        });
+
+        // Reorder button
+        document.getElementById('reorderBtn').addEventListener('click', toggleReorderMode);
+
+        // Close modals on overlay click
+        document.getElementById('serverModal').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+        document.getElementById('deleteModal').addEventListener('click', function (e) {
+            if (e.target === this) closeDeleteModal();
+        });
+
+        // Auto-refresh (but not during reorder mode)
+        setInterval(() => {
+            if (!isReorderMode) {
+                loadServers();
+            }
+        }, REFRESH_INTERVAL);
+    });
+</script>
+{% endblock %}

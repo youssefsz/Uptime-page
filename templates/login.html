@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Uptime Monitor{% endblock %}
+
+{% block body %}
+<div class="login-container">
+    <div class="login-box">
+        <div class="login-header">
+            <h1>UPTIME</h1>
+            <p>Dashboard Access</p>
+        </div>
+        <form class="login-form" id="loginForm">
+            <div class="login-error" id="loginError">
+                Invalid credentials. Please try again.
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-input" placeholder="Enter username"
+                    required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-input" placeholder="Enter password"
+                    required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: var(--space-md);">
+                Sign In
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('loginForm');
+        const errorEl = document.getElementById('loginError');
+
+        // Check if already logged in
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            window.location.href = '/dashboard';
+            return;
+        }
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            errorEl.classList.remove('active');
+
+            try {
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Login failed');
+                }
+
+                const data = await response.json();
+                localStorage.setItem('access_token', data.access_token);
+
+                window.location.href = '/dashboard';
+
+            } catch (error) {
+                errorEl.classList.add('active');
+                document.getElementById('password').value = '';
+            }
+        });
+    });
+</script>
+{% endblock %}
