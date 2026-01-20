@@ -1,29 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Uptime Monitor - Real-time server status monitoring">
     <title>{% block title %}Uptime Monitor{% endblock %}</title>
-    
+
+    <!-- Theme Initialization -->
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || 'system';
+            const html = document.documentElement;
+
+            const applyTheme = (theme) => {
+                if (theme === 'system') {
+                    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    html.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                } else {
+                    html.setAttribute('data-theme', theme);
+                }
+            };
+
+            applyTheme(savedTheme);
+
+            // Watch for system theme changes if in system mode
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (localStorage.getItem('theme') === 'system' || !localStorage.getItem('theme')) {
+                    applyTheme('system');
+                }
+            });
+        })();
+    </script>
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
     <!-- Styles -->
     <link rel="stylesheet" href="/static/css/style.css">
-    
+
     {% block head %}{% endblock %}
 </head>
+
 <body>
     {% block body %}{% endblock %}
-    
+
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
-    
+
     <!-- Scripts -->
     <script src="/static/js/utils.js"></script>
+    <script src="/static/js/theme.js"></script>
     {% block scripts %}{% endblock %}
 </body>
+
 </html>

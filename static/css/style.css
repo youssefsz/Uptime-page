@@ -5,30 +5,19 @@
 
 /* CSS Reset & Variables */
 :root {
-    /* Monochrome Palette */
-    --color-black: #0a0a0a;
-    --color-dark: #141414;
-    --color-gray-900: #1a1a1a;
-    --color-gray-800: #252525;
-    --color-gray-700: #333333;
-    --color-gray-600: #4a4a4a;
-    --color-gray-500: #6b6b6b;
-    --color-gray-400: #8a8a8a;
-    --color-gray-300: #a0a0a0;
-    --color-gray-200: #c0c0c0;
-    --color-gray-100: #e0e0e0;
-    --color-white: #ffffff;
-
-    /* Status Colors */
+    /* Status Colors (Same for both themes for consistency) */
     --color-up: #22c55e;
     --color-up-dim: #16a34a;
     --color-up-glow: rgba(34, 197, 94, 0.15);
     --color-down: #ef4444;
     --color-down-dim: #dc2626;
     --color-down-glow: rgba(239, 68, 68, 0.15);
-    --color-unknown: #eab308;
-    --color-unknown-dim: #ca8a04;
-    --color-unknown-glow: rgba(234, 179, 8, 0.15);
+    --color-degraded: #f59e0b;
+    --color-degraded-glow: rgba(245, 158, 11, 0.15);
+    --color-partial: #f97316;
+    --color-partial-glow: rgba(249, 115, 22, 0.15);
+    --color-unknown: #6b6b6b;
+    --color-unknown-glow: rgba(107, 107, 107, 0.15);
 
     /* Typography */
     --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
@@ -45,14 +34,196 @@
 
     /* Transitions */
     --transition-fast: 150ms ease;
-    --transition-base: 250ms ease;
+    --transition-base: 300ms ease;
     --transition-slow: 400ms ease;
     --transition-smooth: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-theme: 300ms ease;
 
     /* Borders */
     --border-width: 1px;
-    --border-color: var(--color-gray-700);
-    --border-color-hover: var(--color-gray-500);
+}
+
+[data-theme="dark"] {
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #141414;
+    --bg-tertiary: #1a1a1a;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+    --text-muted: #6b6b6b;
+    --border-color: #333333;
+    --border-hover: #6b6b6b;
+    --card-bg: #141414;
+    --input-bg: #141414;
+    --header-bg: rgba(10, 10, 10, 0.85);
+    --modal-bg: #141414;
+    --button-bg: transparent;
+    --button-hover-bg: #252525;
+    --skeleton-start: #252525;
+    --skeleton-mid: #333333;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --switcher-bg: #0a0a0a;
+    --switcher-pill: #2a2a2a;
+}
+
+[data-theme="light"] {
+    --bg-primary: #f6f8fa;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f3f5f7;
+    --text-primary: #1f2328;
+    --text-secondary: #656d76;
+    --text-muted: #6e7781;
+    --border-color: #d0d7de;
+    --border-hover: #afb8c1;
+    --card-bg: #ffffff;
+    --input-bg: #ffffff;
+    --header-bg: rgba(255, 255, 255, 0.8);
+    --modal-bg: #ffffff;
+    --button-bg: #f6f8fa;
+    --button-hover-bg: #f3f4f6;
+    --skeleton-start: #f6f8fa;
+    --skeleton-mid: #d0d7de;
+    --shadow: 0 1px 0 rgba(31, 35, 40, 0.04);
+
+    /* GitHub Light Status Colors */
+    --color-up: #1a7f37;
+    --color-up-glow: rgba(26, 127, 55, 0.15);
+    --color-down: #cf222e;
+    --color-down-glow: rgba(207, 34, 46, 0.15);
+    --color-degraded: #9a6700;
+    --color-degraded-glow: rgba(154, 103, 0, 0.15);
+    --color-partial: #bc4c00;
+    --color-partial-glow: rgba(188, 76, 0, 0.15);
+    --switcher-bg: #d0d7de;
+    --switcher-pill: #ffffff;
+}
+
+/* Light mode specific layouts */
+[data-theme="light"] body {
+    background-color: var(--bg-primary);
+}
+
+[data-theme="light"] .header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #d0d7de;
+}
+
+[data-theme="light"] .footer {
+    background-color: #ffffff;
+    border-top: 1px solid #d0d7de;
+}
+
+[data-theme="light"] .status-card,
+[data-theme="light"] .server-item,
+[data-theme="light"] .chart-container,
+[data-theme="light"] .login-box,
+[data-theme="light"] .modal {
+    background-color: #ffffff;
+    border: 1px solid #d0d7de;
+    box-shadow: 0 1px 3px rgba(31, 35, 40, 0.12);
+}
+
+[data-theme="light"] .status-card-value {
+    color: #1f2328;
+}
+
+[data-theme="light"] .server-item:hover {
+    background-color: #f6f8fa;
+    border-color: #d0d7de;
+}
+
+[data-theme="light"] .btn {
+    background-color: #f6f8fa;
+    border: 1px solid rgba(27, 31, 36, 0.15);
+    color: #24292f;
+    box-shadow: 0 1px 0 rgba(31, 35, 40, 0.04);
+}
+
+[data-theme="light"] .btn:hover {
+    background-color: #f3f4f6;
+    border-color: rgba(27, 31, 36, 0.15);
+}
+
+[data-theme="light"] .btn-primary {
+    background-color: #1f2328;
+    color: #ffffff;
+    border-color: #1f2328;
+}
+
+[data-theme="light"] .btn-primary:hover {
+    background-color: #2b3137;
+}
+
+/* Success Button Override in Light Mode (Actually GitHub uses Green for Success/Primary) */
+[data-theme="light"] .btn-primary-green {
+    background-color: #2da44e;
+    border-color: rgba(27, 31, 36, 0.15);
+    color: #ffffff;
+}
+
+[data-theme="light"] .nav-link {
+    color: #656d76;
+    font-weight: 500;
+}
+
+[data-theme="light"] .nav-link:hover {
+    color: #1f2328;
+}
+
+[data-theme="light"] .nav-link.active {
+    color: #1f2328;
+    border-bottom-color: #fd8c73;
+    /* GitHub uses orange/pink for active tab indicator sometimes, or just black */
+}
+
+[data-theme="light"] .logo {
+    color: #1f2328;
+}
+
+[data-theme="light"] .server-status::before {
+    box-shadow: none !important;
+}
+
+[data-theme="light"] .server-status::after {
+    display: none;
+    /* Remove pulse in light mode for cleaner look */
+}
+
+[data-theme="light"] .server-status.up::before {
+    background-color: #1a7f37;
+}
+
+[data-theme="light"] .server-status.down::before {
+    background-color: #cf222e;
+}
+
+[data-theme="light"] .server-status.unknown::before {
+    background-color: #6e7781;
+}
+
+[data-theme="light"] .github-badge {
+    background-color: #f6f8fa;
+    border-color: #d0d7de;
+    color: #24292f;
+}
+
+[data-theme="light"] .github-badge:hover {
+    background-color: #f3f4f6;
+    border-color: #afb8c1;
+}
+
+/* Redefine old variables to point to new ones for compatibility */
+:root {
+    --color-black: var(--bg-primary);
+    --color-dark: var(--bg-secondary);
+    --color-gray-900: var(--bg-tertiary);
+    --color-gray-800: var(--button-hover-bg);
+    --color-gray-700: var(--border-color);
+    --color-gray-500: var(--text-muted);
+    --color-gray-400: var(--text-muted);
+    --color-gray-300: var(--text-secondary);
+    --color-gray-200: var(--border-hover);
+    --color-gray-100: var(--text-primary);
+    --color-white: var(--text-primary);
 }
 
 /* Reset */
@@ -72,10 +243,11 @@ html {
 
 body {
     font-family: var(--font-sans);
-    background-color: var(--color-black);
-    color: var(--color-gray-100);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
+    transition: background-color var(--transition-theme), color var(--transition-theme);
 }
 
 /* Typography */
@@ -87,7 +259,7 @@ h5,
 h6 {
     font-weight: 500;
     letter-spacing: -0.02em;
-    color: var(--color-white);
+    color: var(--text-primary);
 }
 
 h1 {
@@ -103,17 +275,17 @@ h3 {
 }
 
 p {
-    color: var(--color-gray-300);
+    color: var(--text-secondary);
 }
 
 a {
-    color: var(--color-white);
+    color: var(--text-primary);
     text-decoration: none;
     transition: color var(--transition-fast);
 }
 
 a:hover {
-    color: var(--color-gray-300);
+    color: var(--text-secondary);
 }
 
 /* Layout */
@@ -133,11 +305,66 @@ a:hover {
 .header {
     border-bottom: var(--border-width) solid var(--border-color);
     padding: var(--space-lg) 0;
-    background-color: var(--color-black);
+    background-color: var(--header-bg);
     position: sticky;
     top: 0;
     z-index: 100;
     backdrop-filter: blur(8px);
+    transition: background-color var(--transition-theme), border-color var(--transition-theme);
+}
+
+/* Theme Switcher */
+.theme-switcher {
+    display: flex;
+    background-color: var(--switcher-bg);
+    border: var(--border-width) solid var(--border-color);
+    padding: 2px;
+    gap: 2px;
+    position: relative;
+    border-radius: 4px;
+}
+
+.theme-switcher::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: var(--switcher-pos, 2px);
+    width: var(--switcher-width, 30px);
+    height: calc(100% - 4px);
+    background-color: var(--switcher-pill);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    transition: all var(--transition-theme);
+    z-index: 0;
+}
+
+.theme-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--space-xs) var(--space-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: color var(--transition-theme);
+    position: relative;
+    z-index: 1;
+    min-width: 32px;
+}
+
+.theme-btn:hover {
+    color: var(--text-primary);
+}
+
+.theme-btn.active {
+    color: var(--text-primary);
+}
+
+.theme-btn svg {
+    width: 14px;
+    height: 14px;
 }
 
 .header-content {
@@ -150,7 +377,7 @@ a:hover {
     font-family: var(--font-mono);
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--color-white);
+    color: var(--text-primary);
     letter-spacing: -0.03em;
 }
 
@@ -162,19 +389,19 @@ a:hover {
 
 .nav-link {
     font-size: 0.875rem;
-    color: var(--color-gray-400);
-    transition: color var(--transition-fast);
+    color: var(--text-muted);
+    transition: color var(--transition-theme), border-color var(--transition-theme);
     padding: var(--space-sm) 0;
     border-bottom: var(--border-width) solid transparent;
 }
 
 .nav-link:hover,
 .nav-link.active {
-    color: var(--color-white);
+    color: var(--text-primary);
 }
 
 .nav-link.active {
-    border-bottom-color: var(--color-white);
+    border-bottom-color: var(--text-primary);
 }
 
 /* Main Content */
@@ -192,21 +419,22 @@ a:hover {
 }
 
 .status-card {
-    background-color: var(--color-dark);
+    background-color: var(--bg-secondary);
     border: var(--border-width) solid var(--border-color);
     padding: var(--space-lg);
-    transition: border-color var(--transition-base), background-color var(--transition-base);
+    transition: background-color var(--transition-theme), border-color var(--transition-theme), box-shadow var(--transition-theme);
 }
 
 .status-card:hover {
-    border-color: var(--border-color-hover);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow);
 }
 
 .status-card-label {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--color-gray-500);
+    color: var(--text-muted);
     margin-bottom: var(--space-sm);
 }
 
@@ -214,7 +442,7 @@ a:hover {
     font-family: var(--font-mono);
     font-size: 2rem;
     font-weight: 600;
-    color: var(--color-white);
+    color: var(--text-primary);
 }
 
 .status-card-value.up {
@@ -237,21 +465,22 @@ a:hover {
 }
 
 .server-item {
-    background-color: var(--color-dark);
+    background-color: var(--bg-secondary);
     border: var(--border-width) solid var(--border-color);
     padding: var(--space-lg);
     display: grid;
     grid-template-columns: auto 1fr auto auto auto;
     gap: var(--space-lg);
     align-items: start;
-    transition: all var(--transition-smooth);
+    transition: background-color var(--transition-theme), border-color var(--transition-theme), box-shadow var(--transition-theme), transform var(--transition-smooth), opacity var(--transition-smooth);
     transform: translateY(0);
     opacity: 1;
 }
 
 .server-item:hover {
-    border-color: var(--border-color-hover);
-    background-color: var(--color-gray-900);
+    border-color: var(--border-hover);
+    background-color: var(--bg-tertiary);
+    box-shadow: var(--shadow);
 }
 
 .entering {
@@ -295,7 +524,7 @@ a:hover {
     position: absolute;
     inset: 0;
     background-color: var(--color-unknown);
-    transition: background-color var(--transition-smooth), box-shadow var(--transition-smooth);
+    transition: background-color var(--transition-theme), box-shadow var(--transition-theme);
 }
 
 .server-status.up::before {
@@ -355,7 +584,7 @@ a:hover {
 
 .server-name {
     font-weight: 500;
-    color: var(--color-white);
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -364,7 +593,7 @@ a:hover {
 .server-url {
     font-family: var(--font-mono);
     font-size: 0.75rem;
-    color: var(--color-gray-500);
+    color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -376,7 +605,12 @@ a:hover {
     object-fit: contain;
     filter: grayscale(100%);
     opacity: 0.7;
-    transition: filter var(--transition-base), opacity var(--transition-base);
+    transition: filter var(--transition-theme), opacity var(--transition-theme);
+}
+
+[data-theme="light"] .server-logo {
+    filter: none;
+    opacity: 0.9;
 }
 
 .server-item:hover .server-logo {
@@ -394,12 +628,12 @@ a:hover {
 .server-response-time {
     font-family: var(--font-mono);
     font-size: 0.875rem;
-    color: var(--color-gray-300);
+    color: var(--text-secondary);
 }
 
 .server-last-check {
     font-size: 0.75rem;
-    color: var(--color-gray-500);
+    color: var(--text-muted);
 }
 
 /* Buttons */
@@ -413,15 +647,15 @@ a:hover {
     font-size: 0.875rem;
     font-weight: 500;
     border: var(--border-width) solid var(--border-color);
-    background-color: transparent;
-    color: var(--color-white);
+    background-color: var(--button-bg);
+    color: var(--text-primary);
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: background-color var(--transition-theme), border-color var(--transition-theme), color var(--transition-theme), box-shadow var(--transition-theme), transform var(--transition-fast);
 }
 
 .btn:hover {
-    background-color: var(--color-gray-800);
-    border-color: var(--color-gray-500);
+    background-color: var(--button-hover-bg);
+    border-color: var(--border-hover);
 }
 
 .btn:active {
@@ -429,14 +663,14 @@ a:hover {
 }
 
 .btn-primary {
-    background-color: var(--color-white);
-    color: var(--color-black);
-    border-color: var(--color-white);
+    background-color: var(--text-primary);
+    color: var(--bg-primary);
+    border-color: var(--text-primary);
 }
 
 .btn-primary:hover {
-    background-color: var(--color-gray-200);
-    border-color: var(--color-gray-200);
+    background-color: var(--text-secondary);
+    border-color: var(--text-secondary);
 }
 
 .btn-danger {
@@ -465,7 +699,7 @@ a:hover {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--color-gray-400);
+    color: var(--text-muted);
 }
 
 .form-input {
@@ -473,20 +707,20 @@ a:hover {
     padding: var(--space-sm) var(--space-md);
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    background-color: var(--color-dark);
+    background-color: var(--input-bg);
     border: var(--border-width) solid var(--border-color);
-    color: var(--color-white);
-    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    color: var(--text-primary);
+    transition: background-color var(--transition-theme), border-color var(--transition-theme), box-shadow var(--transition-theme);
 }
 
 .form-input:focus {
     outline: none;
-    border-color: var(--color-white);
-    background-color: var(--color-gray-900);
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 2px var(--bg-tertiary);
 }
 
 .form-input::placeholder {
-    color: var(--color-gray-600);
+    color: var(--text-muted);
 }
 
 /* Modal */
@@ -509,14 +743,15 @@ a:hover {
 }
 
 .modal {
-    background-color: var(--color-dark);
+    background-color: var(--modal-bg);
     border: var(--border-width) solid var(--border-color);
     width: 100%;
     max-width: 480px;
     max-height: 90vh;
     overflow-y: auto;
     transform: translateY(20px);
-    transition: transform var(--transition-smooth);
+    transition: transform var(--transition-smooth), background-color var(--transition-theme), border-color var(--transition-theme);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 .modal-overlay.active .modal {
@@ -578,8 +813,9 @@ a:hover {
 .login-box {
     width: 100%;
     max-width: 360px;
-    background-color: var(--color-dark);
+    background-color: var(--bg-secondary);
     border: var(--border-width) solid var(--border-color);
+    box-shadow: var(--shadow);
 }
 
 .login-header {
@@ -635,12 +871,12 @@ a:hover {
 
 /* Charts */
 .chart-container {
-    background-color: var(--color-dark);
+    background-color: var(--bg-secondary);
     border: var(--border-width) solid var(--border-color);
     padding: var(--space-lg);
     margin-top: var(--space-lg);
     opacity: 1;
-    transition: opacity var(--transition-base);
+    transition: opacity var(--transition-base), background-color var(--transition-base), border-color var(--transition-base);
 }
 
 .chart-container.loading {
@@ -686,7 +922,8 @@ a:hover {
 .footer {
     border-top: var(--border-width) solid var(--border-color);
     padding: var(--space-xl) 0;
-    background-color: var(--color-black);
+    background-color: var(--bg-primary);
+    transition: background-color var(--transition-base), border-color var(--transition-base);
 }
 
 .footer-content {
@@ -721,9 +958,9 @@ a:hover {
     align-items: center;
     gap: var(--space-sm);
     padding: var(--space-xs) var(--space-md);
-    background-color: var(--color-gray-900);
+    background-color: var(--bg-tertiary);
     border: var(--border-width) solid var(--border-color);
-    color: var(--color-gray-300);
+    color: var(--text-muted);
     font-size: 0.7rem;
     font-weight: 500;
     text-transform: uppercase;
@@ -732,9 +969,9 @@ a:hover {
 }
 
 .github-badge:hover {
-    border-color: var(--color-gray-400);
-    color: var(--color-white);
-    background-color: var(--color-dark);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
 }
 
 .github-link {
@@ -751,10 +988,38 @@ a:hover {
 
 /* Responsive */
 @media (max-width: 768px) {
+    .container {
+        padding: 0 var(--space-md);
+    }
+
+    .header {
+        padding: var(--space-md) 0;
+    }
+
+    .header-content {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: var(--space-sm);
+    }
+
+    .logo {
+        font-size: 1.1rem;
+    }
+
+    .nav {
+        gap: var(--space-md);
+    }
+
+    .nav-link {
+        font-size: 0.8rem;
+    }
+
     .server-item {
         grid-template-columns: auto 1fr;
-        grid-template-rows: auto auto;
-        gap: var(--space-md);
+        grid-template-rows: auto auto auto;
+        gap: var(--space-sm) var(--space-md);
+        padding: var(--space-md);
     }
 
     .server-meta {
@@ -762,6 +1027,17 @@ a:hover {
         flex-direction: row;
         justify-content: space-between;
         align-items: center;
+        border-top: 1px solid var(--border-color);
+        padding-top: var(--space-xs);
+        margin-top: var(--space-xs);
+        width: 100%;
+    }
+
+    .server-actions {
+        grid-column: 1 / -1;
+        opacity: 1;
+        justify-content: flex-end;
+        margin-top: var(--space-xs);
     }
 
     .server-logo {
@@ -770,20 +1046,97 @@ a:hover {
 
     .status-summary {
         grid-template-columns: 1fr 1fr;
+        gap: var(--space-sm);
     }
 
+    .status-card {
+        padding: var(--space-md);
+    }
+
+    .status-card-value {
+        font-size: 1.5rem;
+    }
+
+    /* Fixed tooltips on mobile to prevent going off-screen */
+    .uptime-bar-segment:hover::after {
+        position: fixed;
+        top: auto;
+        bottom: 20px;
+        left: var(--space-md);
+        right: var(--space-md);
+        width: auto;
+        transform: none;
+        white-space: normal;
+        background-color: var(--bg-secondary);
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+        padding: var(--space-md);
+        border-radius: 8px;
+        border: 2px solid var(--border-color);
+        z-index: 2000;
+        text-align: center;
+        font-size: 0.8rem;
+    }
+
+    /* Add a small arrow/indicator that something is hoverable on touch */
+    .uptime-bar-segment {
+        min-width: 6px;
+        /* Slightly wider on mobile for easier touch */
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-md);
+    }
+
+    .dashboard-header div {
+        width: 100%;
+    }
+
+    .dashboard-header .btn {
+        flex: 1;
+    }
+}
+
+@media (max-width: 480px) {
     .header-content {
         flex-direction: column;
-        gap: var(--space-md);
+        align-items: center;
+    }
+
+    .status-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .nav {
+        width: 100%;
+        justify-content: center;
+        overflow-x: auto;
+        padding-bottom: var(--space-xs);
+    }
+
+    .server-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-xs);
+    }
+
+    .server-actions {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .server-actions .btn {
+        flex: 1;
     }
 }
 
 /* Loading States */
 .skeleton {
     background: linear-gradient(90deg,
-            var(--color-gray-800) 0%,
-            var(--color-gray-700) 50%,
-            var(--color-gray-800) 100%);
+            var(--skeleton-start) 0%,
+            var(--skeleton-mid) 50%,
+            var(--skeleton-start) 100%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 }
@@ -810,13 +1163,14 @@ a:hover {
 }
 
 .toast {
-    background-color: var(--color-dark);
+    background-color: var(--bg-secondary);
     border: var(--border-width) solid var(--border-color);
     padding: var(--space-md) var(--space-lg);
     min-width: 280px;
     transform: translateX(100%);
     opacity: 0;
     transition: all var(--transition-smooth);
+    box-shadow: var(--shadow);
 }
 
 .toast.active {
@@ -868,8 +1222,21 @@ a:hover {
     height: 32px;
     border-radius: 4px;
     /* overflow: hidden removed to allow tooltips to show */
-    background-color: var(--color-gray-900);
+    background-color: var(--bg-tertiary);
     /* Stable background before bars load */
+}
+
+@media (max-width: 768px) {
+    .uptime-bar-container {
+        overflow-x: auto;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .uptime-bar {
+        min-width: 300px;
+        /* Ensure segments don't get too tiny */
+    }
 }
 
 .uptime-bar-segment {
@@ -915,7 +1282,7 @@ a:hover {
     bottom: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%);
-    background-color: var(--color-gray-900);
+    background-color: var(--bg-secondary);
     border: var(--border-width) solid var(--border-color);
     padding: var(--space-xs) var(--space-sm);
     font-size: 0.7rem;
@@ -933,6 +1300,14 @@ a:hover {
     visibility: visible;
 }
 
+/* Ensure tooltips don't get cut off on desktop too */
+.uptime-bar-segment::after {
+    max-width: 300px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.4;
+}
+
 /* Uptime bar legend */
 .uptime-bar-legend {
     display: flex;
@@ -946,10 +1321,20 @@ a:hover {
 .status-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-lg);
+    gap: var(--space-md) var(--space-lg);
     margin-top: var(--space-lg);
     padding-top: var(--space-md);
     border-top: var(--border-width) solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .status-legend {
+        gap: var(--space-sm) var(--space-md);
+    }
+
+    .status-legend-item {
+        font-size: 0.7rem;
+    }
 }
 
 .status-legend-item {

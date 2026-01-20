@@ -27,6 +27,36 @@
                 <a href="/" class="nav-link">Status Page</a>
                 <a href="/dashboard" class="nav-link active">Dashboard</a>
                 <button class="btn btn-sm" onclick="openPasswordModal()">Change Password</button>
+                <div class="theme-switcher" id="themeSwitcher">
+                    <button class="theme-btn" data-theme-val="light" title="Light Mode">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </button>
+                    <button class="theme-btn" data-theme-val="dark" title="Dark Mode">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                    <button class="theme-btn" data-theme-val="system" title="System Theme">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                    </button>
+                </div>
                 <button class="btn btn-sm" id="logoutBtn">Logout</button>
                 <a href="https://github.com/youssefsz/Uptime-page" class="nav-link github-link" target="_blank"
                     rel="noopener noreferrer" title="View on GitHub">
@@ -777,6 +807,10 @@
                 });
             }
 
+            const themeStyles = getComputedStyle(document.documentElement);
+            const textColor = themeStyles.getPropertyValue('--text-muted').trim() || '#6b6b6b';
+            const gridColor = themeStyles.getPropertyValue('--border-color').trim() || 'rgba(255, 255, 255, 0.05)';
+
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -795,7 +829,7 @@
                             display: isAll,
                             position: 'bottom',
                             labels: {
-                                color: '#6b6b6b',
+                                color: textColor,
                                 usePointStyle: true,
                                 padding: 20
                             }
@@ -803,7 +837,6 @@
                         tooltip: {
                             callback: {
                                 title: function (context) {
-                                    // Use the adapter's formatting or raw date
                                     return context[0].label;
                                 }
                             }
@@ -821,10 +854,11 @@
                             },
                             display: true,
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.05)'
+                                color: gridColor,
+                                drawBorder: false
                             },
                             ticks: {
-                                color: '#6b6b6b',
+                                color: textColor,
                                 maxTicksLimit: 8,
                                 source: 'auto'
                             }
@@ -833,10 +867,11 @@
                             display: true,
                             beginAtZero: true,
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.05)'
+                                color: gridColor,
+                                drawBorder: false
                             },
                             ticks: {
-                                color: '#6b6b6b',
+                                color: textColor,
                                 callback: function (value) {
                                     return value + 'ms';
                                 }
@@ -852,6 +887,22 @@
             container.classList.remove('loading');
         }
     }
+
+    // Global listener for theme changes to update chart
+    window.addEventListener('themechanged', () => {
+        if (chart) {
+            const newStyles = getComputedStyle(document.documentElement);
+            const newTextColor = newStyles.getPropertyValue('--text-muted').trim();
+            const newGridColor = newStyles.getPropertyValue('--border-color').trim();
+
+            chart.options.plugins.legend.labels.color = newTextColor;
+            chart.options.scales.x.ticks.color = newTextColor;
+            chart.options.scales.x.grid.color = newGridColor;
+            chart.options.scales.y.ticks.color = newTextColor;
+            chart.options.scales.y.grid.color = newGridColor;
+            chart.update();
+        }
+    });
 
     // ============== Drag and Drop Reordering ==============
 
