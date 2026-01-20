@@ -569,11 +569,11 @@
         div.innerHTML = `
         <div class="server-status ${statusClass}"></div>
         <div class="server-info">
-            <div class="server-name">${escapeHtml(server.name)}</div>
-            <div class="server-url">${escapeHtml(server.url)} → | ${server.uptime_percentage ? server.uptime_percentage.toFixed(3) : '0.000'}%</div>
+            <div class="server-name"><a href="${escapeHtml(server.url)}" target="_blank" rel="noopener noreferrer" class="server-name-link">${escapeHtml(server.name)}</a></div>
+            <div class="server-url"><a href="${escapeHtml(server.url)}" target="_blank" rel="noopener noreferrer" class="server-link">${escapeHtml(server.url)}</a> → | ${server.uptime_percentage ? server.uptime_percentage.toFixed(3) : '0.000'}%</div>
             ${createUptimeBars(server.uptime_bars)}
         </div>
-        ${server.logo_url ? `<img src="${escapeHtml(server.logo_url)}" alt="" class="server-logo">` : '<div></div>'}
+        ${server.logo_url ? `<a href="${escapeHtml(server.url)}" target="_blank" rel="noopener noreferrer" class="server-logo-link"><img src="${escapeHtml(server.logo_url)}" alt="" class="server-logo"></a>` : '<div></div>'}
         <div class="server-meta">
             <div class="server-response-time">${formatResponseTime(server.response_time_ms)}</div>
             <div class="server-last-check">${timeAgo(server.last_ping)}</div>
