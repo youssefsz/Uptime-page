@@ -1,0 +1,65 @@
+version: '3.8'
+
+x-service-template: &service-template
+  build: .
+  healthcheck:
+    test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+    interval: 5s
+    timeout: 5s
+    retries: 5
+    start_period: 10s
+  restart: unless-stopped
+  env_file:
+    - .env
+  environment:
+    - PORT=8000
+    # Identifying the instance for logs
+    - INSTANCE_ID={{.Name}}
+  networks:
+    - traefik
+    - db_network
+  deploy:
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 512M
+
+services:
+  # ============================================
+  # Blue Instance
+  # ============================================
+  blue:
+    <<: *service-template
+    container_name: uptime-page-blue
+    labels:
+      - "traefik.enable=true"
+      # Router - Distinct name but SAME Host rule
+      - "traefik.http.routers.uptime-page-blue.rule=Host(`uptime.youssef.run.place`)"
+      - "traefik.http.routers.uptime-page-blue.entrypoints=websecure"
+      - "traefik.http.routers.uptime-page-blue.tls.certresolver=myresolver"
+      - "traefik.http.routers.uptime-page-blue.middlewares=default-chain@file"
+      # Service
+      - "traefik.http.services.uptime-page-blue.loadbalancer.server.port=8000"
+
+  # ============================================
+  # Green Instance
+  # ============================================
+  green:
+    <<: *service-template
+    container_name: uptime-page-green
+    labels:
+      - "traefik.enable=true"
+      # Router - Distinct name but SAME Host rule
+      - "traefik.http.routers.uptime-page-green.rule=Host(`uptime.youssef.run.place`)"
+      - "traefik.http.routers.uptime-page-green.entrypoints=websecure"
+      - "traefik.http.routers.uptime-page-green.tls.certresolver=myresolver"
+      - "traefik.http.routers.uptime-page-green.middlewares=default-chain@file"
+      # Service
+      - "traefik.http.services.uptime-page-green.loadbalancer.server.port=8000"
+
+networks:
+  traefik:
+    external: true
+  db_network:
+    external: true
+    name: postgres-server_db_network
