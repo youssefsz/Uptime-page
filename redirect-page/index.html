@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting to Uptime Monitor</title>
+    <meta name="description" content="Redirecting to Uptime Monitor - Real-time server status monitoring">
+    <meta name="keywords" content="uptime, monitor, server status, redirect">
+    <meta name="author" content="Youssef Dhibi">
+    <meta name="robots" content="noindex, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://youssef.tn/uptime/">
+    <meta property="og:title" content="Redirecting to Uptime Monitor">
+    <meta property="og:description" content="Redirecting to Uptime Monitor - Real-time server status monitoring">
+    <meta property="og:image" content="https://youssef.tn/uptime/splash.png">
+    <meta property="og:site_name" content="Uptime Monitor">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://youssef.tn/uptime/">
+    <meta property="twitter:title" content="Redirecting to Uptime Monitor">
+    <meta property="twitter:description" content="Redirecting to Uptime Monitor - Real-time server status monitoring">
+    <meta property="twitter:image" content="https://youssef.tn/uptime/splash.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* ============================================
+           UPTIME MONITOR - MINIMALIST DESIGN SYSTEM
+           (Extracted for Standalone Use)
+           ============================================ */
+
+        :root {
+            /* Status Colors */
+            --color-up: #22c55e;
+            --color-up-dim: #16a34a;
+            --color-up-glow: rgba(34, 197, 94, 0.15);
+            --color-down: #ef4444;
+            --color-down-dim: #dc2626;
+            --color-down-glow: rgba(239, 68, 68, 0.15);
+            --color-degraded: #f59e0b;
+            --color-degraded-glow: rgba(245, 158, 11, 0.15);
+            --color-partial: #f97316;
+            --color-partial-glow: rgba(249, 115, 22, 0.15);
+            --color-unknown: #6b6b6b;
+            --color-unknown-glow: rgba(107, 107, 107, 0.15);
+
+            /* Typography */
+            --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+            /* Spacing */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            --space-3xl: 64px;
+
+            /* Transitions */
+            --transition-fast: 150ms ease;
+            --transition-base: 300ms ease;
+            --transition-slow: 400ms ease;
+            --transition-smooth: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-theme: 300ms ease;
+
+            /* Borders */
+            --border-width: 1px;
+
+            /* Default Light Theme Variables */
+            --bg-primary: #f6f8fa;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f3f5f7;
+            --text-primary: #1f2328;
+            --text-secondary: #656d76;
+            --text-muted: #6e7781;
+            --border-color: #d0d7de;
+            --border-hover: #afb8c1;
+            --card-bg: #ffffff;
+            --input-bg: #ffffff;
+            --header-bg: rgba(255, 255, 255, 0.8);
+            --button-bg: #f6f8fa;
+            --button-hover-bg: #f3f4f6;
+            --shadow: 0 1px 0 rgba(31, 35, 40, 0.04);
+
+            /* GitHub Light Status Colors */
+            /* Overriding the generic status colors if needed for light theme consistency */
+        }
+
+        /* Dark Theme overrides */
+        [data-theme="dark"] {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-tertiary: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #6b6b6b;
+            --border-color: #333333;
+            --border-hover: #6b6b6b;
+            --card-bg: #141414;
+            --input-bg: #141414;
+            --header-bg: rgba(10, 10, 10, 0.85);
+            --button-bg: transparent;
+            --button-hover-bg: #252525;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+            --color-up: #22c55e;
+            --color-down: #ef4444;
+        }
+
+        /* Reset & Base */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            margin: 0;
+            transition: background-color var(--transition-theme), color var(--transition-theme);
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            opacity: 1;
+            /* Explicitly visible */
+        }
+
+        a {
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: color var(--transition-fast);
+        }
+
+        /* Layout & Components */
+        .page-center {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-md);
+        }
+
+        .status-card {
+            background-color: var(--bg-secondary);
+            border: var(--border-width) solid var(--border-color);
+            padding: var(--space-lg);
+            transition: background-color var(--transition-theme), border-color var(--transition-theme), box-shadow var(--transition-theme);
+            border-radius: 6px;
+            opacity: 1;
+            /* Ensure visible */
+        }
+
+        /* Light mode specific override for card */
+        [data-theme="light"] .status-card {
+            background-color: #ffffff;
+            border: 1px solid #d0d7de;
+            box-shadow: 0 1px 3px rgba(31, 35, 40, 0.12);
+        }
+
+        .redirect-card {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            padding: var(--space-2xl) var(--space-xl);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.03em;
+            margin-bottom: var(--space-xl);
+        }
+
+        .logo svg {
+            transition: transform var(--transition-base);
+        }
+
+        [data-theme="dark"] .logo svg {
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.1));
+        }
+
+        .redirect-title {
+            margin-bottom: var(--space-sm);
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .redirect-text {
+            margin-bottom: var(--space-xl);
+            color: var(--text-secondary);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            height: 4px;
+            background-color: var(--bg-tertiary);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: var(--space-xl);
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--text-primary);
+            width: 0%;
+            border-radius: 999px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: var(--border-width) solid var(--border-color);
+            background-color: var(--button-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background-color var(--transition-theme), border-color var(--transition-theme), color var(--transition-theme), box-shadow var(--transition-theme), transform var(--transition-fast);
+            border-radius: 6px;
+        }
+
+        .btn:hover {
+            background-color: var(--button-hover-bg);
+            border-color: var(--border-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background-color: var(--text-primary);
+            color: var(--bg-primary);
+            border-color: var(--text-primary);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--text-secondary);
+            /* Inverted for hover effect */
+            border-color: var(--text-secondary);
+        }
+
+        [data-theme="light"] .btn-primary {
+            background-color: #1f2328;
+            color: #ffffff;
+            border-color: #1f2328;
+        }
+
+        [data-theme="light"] .btn-primary:hover {
+            background-color: #2b3137;
+        }
+
+        /* Remove fade-in opacity 0 to ensure content is always visible */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <!-- Theme Initialization Script (Inline) -->
+    <script>
+        (function () {
+            try {
+                const savedTheme = localStorage.getItem('theme') || 'system';
+                const html = document.documentElement;
+
+                const applyTheme = (theme) => {
+                    if (theme === 'system') {
+                        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                        html.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                    } else {
+                        html.setAttribute('data-theme', theme);
+                    }
+                };
+
+                applyTheme(savedTheme);
+
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                    if (localStorage.getItem('theme') === 'system' || !localStorage.getItem('theme')) {
+                        applyTheme('system');
+                    }
+                });
+            } catch (e) {
+                console.error("Theme init failed", e);
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <div class="page-center">
+        <div class="status-card redirect-card fade-in">
+            <div class="logo">
+                <img src="splash.png" alt="Uptime Logo" style="height: 64px; width: auto; border-radius: 4px;">
+            </div>
+
+            <h1 class="redirect-title">Moving you...</h1>
+            <p class="redirect-text">
+                Redirecting to the dashboard in <span id="countdown"
+                    style="font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums;">4</span> seconds
+            </p>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <a href="https://uptime.youssef.run.place/" class="btn btn-primary"
+                style="width: 100%; justify-content: center;">
+                Go there now
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const TARGET_URL = "https://uptime.youssef.run.place/";
+            const DURATION = 4; // seconds
+
+            const countdownEl = document.getElementById('countdown');
+            const progressBarEl = document.getElementById('progressBar');
+
+            let timeLeft = DURATION;
+
+            // Set transition duration equal to total wait time
+            progressBarEl.style.transition = `width ${DURATION}s linear`;
+
+            // Force reflow
+            void progressBarEl.offsetWidth;
+
+            // Start progress bar
+            // Use setTimeout to ensure the transition is picked up after the initial paint
+            setTimeout(() => {
+                progressBarEl.style.width = '100%';
+            }, 50);
+
+            const interval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft >= 0) {
+                    countdownEl.textContent = timeLeft;
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    window.location.href = TARGET_URL;
+                }
+            }, 1000);
+
+            // Fallback
+            setTimeout(() => {
+                window.location.href = TARGET_URL;
+            }, DURATION * 1000 + 500);
+
+            window.addEventListener('unload', () => {
+                clearInterval(interval);
+            });
+        });
+    </script>
+</body>
+
+</html>
