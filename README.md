@@ -6,10 +6,11 @@ A lightweight, self-hosted uptime monitoring system built with FastAPI.
 
 - Public status page with live updates
 - Private dashboard (login protected)
-- Add/remove servers to monitor
+- Manage servers easily (Add/Remove/Edit)
 - Automatic pinging every 30 seconds (configurable)
-- Response time tracking and history
-- PostgreSQL database for data persistence
+- Response time tracking and history visualization
+- PostgreSQL database for reliable data persistence
+- Minimalist Design with dark mode support
 
 ## Quick Start
 
@@ -21,7 +22,7 @@ uv sync
 
 ### 2. Setup PostgreSQL
 
-Create a database:
+Create a new database:
 
 ```sql
 CREATE DATABASE uptime_db;
@@ -29,7 +30,7 @@ CREATE DATABASE uptime_db;
 
 ### 3. Configure Environment
 
-Edit `.env` file:
+Copy .env.example to .env and edit:
 
 ```env
 DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/uptime_db
@@ -45,9 +46,9 @@ uv run uvicorn app.main:app --reload
 ```
 
 Visit:
-- Public Status: http://localhost:8000
-- Dashboard: http://localhost:8000/dashboard
-- Login: http://localhost:8000/login
+- Public Status: [http://localhost:8000](http://localhost:8000)
+- Dashboard: [http://localhost:8000/dashboard](http://localhost:8000/dashboard)
+- Login: [http://localhost:8000/login](http://localhost:8000/login)
 
 ## API Endpoints
 
@@ -83,3 +84,12 @@ uptime-page/
 ├── .env                 # Configuration
 └── pyproject.toml       # Dependencies
 ```
+
+## License
+
+Distributed under the MIT License. See LICENSE for more information.
+
+## Developed by
+
+Created by [Youssef Dhibi](https://youssef.tn).
+

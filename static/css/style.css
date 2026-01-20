@@ -685,13 +685,68 @@ a:hover {
 /* Footer */
 .footer {
     border-top: var(--border-width) solid var(--border-color);
-    padding: var(--space-lg) 0;
-    text-align: center;
+    padding: var(--space-xl) 0;
+    background-color: var(--color-black);
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
 }
 
 .footer-text {
     font-size: 0.75rem;
     color: var(--color-gray-500);
+}
+
+.creator-link {
+    color: var(--color-white);
+    font-weight: 500;
+    transition: color var(--transition-fast);
+}
+
+.creator-link:hover {
+    color: var(--color-gray-300);
+    text-decoration: underline;
+}
+
+.footer-badge {
+    margin: var(--space-xs) 0;
+}
+
+.github-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-md);
+    background-color: var(--color-gray-900);
+    border: var(--border-width) solid var(--border-color);
+    color: var(--color-gray-300);
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all var(--transition-base);
+}
+
+.github-badge:hover {
+    border-color: var(--color-gray-400);
+    color: var(--color-white);
+    background-color: var(--color-dark);
+}
+
+.github-link {
+    display: flex;
+    align-items: center;
+    color: var(--color-gray-500);
+    transition: all var(--transition-fast);
+}
+
+.github-link:hover {
+    color: var(--color-white);
+    transform: translateY(-1px);
 }
 
 /* Responsive */
