@@ -184,6 +184,43 @@
     let servers = [];
     let isInitialLoad = true;
 
+    // Create skeleton HTML for loading state (public page - no action buttons)
+    function createSkeletonHTML(count = 3) {
+        let html = '';
+        for (let i = 0; i < count; i++) {
+            html += `
+                <div class="server-skeleton server-skeleton-public">
+                    <div class="skeleton-status skeleton"></div>
+                    <div class="skeleton-info">
+                        <div class="skeleton-name skeleton"></div>
+                        <div class="skeleton-url skeleton"></div>
+                        <div class="skeleton-uptime-container">
+                            <div class="skeleton-uptime-bar skeleton"></div>
+                            <div class="skeleton-uptime-legend">
+                                <div class="skeleton-legend-date skeleton"></div>
+                                <div class="skeleton-legend-date skeleton"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="skeleton-logo skeleton"></div>
+                    <div class="skeleton-meta">
+                        <div class="skeleton-response skeleton"></div>
+                        <div class="skeleton-time skeleton"></div>
+                        <div class="skeleton-status-label skeleton"></div>
+                    </div>
+                </div>
+            `;
+        }
+        return html;
+    }
+
+    // Show skeleton loading state
+    function showSkeletons() {
+        const serverList = document.getElementById('serverList');
+        serverList.innerHTML = createSkeletonHTML(3);
+        serverList.style.display = 'flex';
+    }
+
     // Format time ago
     function timeAgo(date) {
         if (!date) return 'Never';
@@ -275,9 +312,10 @@
         const statusLabel = server.current_status || 'Unknown';
 
         const div = document.createElement('div');
-        div.className = animate ? 'server-item entering' : 'server-item';
+        div.className = animate ? 'server-item fade-in' : 'server-item';
         if (animate) {
-            div.style.animationDelay = (index * 50) + 'ms';
+            div.style.animationDelay = (index * 80) + 'ms';
+            div.style.opacity = '0';
         }
 
         div.innerHTML = `
@@ -319,6 +357,14 @@
 
     // Load servers
     async function loadServers() {
+        const serverList = document.getElementById('serverList');
+        const emptyState = document.getElementById('emptyState');
+
+        // Show skeletons on initial load
+        if (isInitialLoad) {
+            showSkeletons();
+        }
+
         try {
             // Use the new endpoint with uptime bars
             const response = await fetch(`${API_BASE}/servers/with-bars?days=30`);
@@ -329,9 +375,6 @@
 
             servers = await response.json();
 
-            const serverList = document.getElementById('serverList');
-            const emptyState = document.getElementById('emptyState');
-
             if (servers.length === 0) {
                 serverList.style.display = 'none';
                 emptyState.style.display = 'block';
@@ -339,7 +382,12 @@
                 serverList.style.display = 'flex';
                 emptyState.style.display = 'none';
 
-                // Clear and rebuild using fragment to avoid flickering
+                // Small delay to ensure skeleton animation completes smoothly
+                if (isInitialLoad) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+
+                // Clear and rebuild using fragment for smooth transition
                 const fragment = document.createDocumentFragment();
                 servers.forEach((server, index) => {
                     fragment.appendChild(createServerElement(server, index, isInitialLoad));
@@ -356,6 +404,11 @@
 
         } catch (error) {
             console.error('Error loading servers:', error);
+            // On error, still hide skeletons if this was initial load
+            if (isInitialLoad) {
+                serverList.innerHTML = '';
+                isInitialLoad = false;
+            }
         }
     }
 

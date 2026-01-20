@@ -1166,6 +1166,214 @@ a:hover {
     }
 }
 
+/* Skeleton Server Item - MUST MATCH .server-item exactly */
+.server-skeleton {
+    background-color: var(--bg-secondary);
+    border: var(--border-width) solid var(--border-color);
+    padding: var(--space-lg);
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto;
+    gap: var(--space-lg);
+    align-items: start;
+    opacity: 0;
+    animation: skeletonFadeIn 0.4s ease forwards;
+}
+
+.server-skeleton:nth-child(1) {
+    animation-delay: 0ms;
+}
+
+.server-skeleton:nth-child(2) {
+    animation-delay: 80ms;
+}
+
+.server-skeleton:nth-child(3) {
+    animation-delay: 160ms;
+}
+
+.server-skeleton:nth-child(4) {
+    animation-delay: 240ms;
+}
+
+.server-skeleton:nth-child(5) {
+    animation-delay: 320ms;
+}
+
+@keyframes skeletonFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Matches .server-status - 12x12 box */
+.skeleton-status {
+    width: 12px;
+    height: 12px;
+}
+
+/* Matches .server-info - flex column with gap xs (4px) */
+.skeleton-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-width: 0;
+}
+
+/* Matches .server-name line height ~20px */
+.skeleton-name {
+    height: 20px;
+    width: 180px;
+    max-width: 100%;
+}
+
+/* Matches .server-url font-size 0.75rem ~12px line */
+.skeleton-url {
+    height: 14px;
+    width: 280px;
+    max-width: 100%;
+}
+
+/* Matches .uptime-bar-container structure */
+.skeleton-uptime-container {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: var(--border-width) solid var(--border-color);
+}
+
+/* Matches .uptime-bar - height 32px */
+.skeleton-uptime-bar {
+    height: 32px;
+    width: 100%;
+    border-radius: 4px;
+}
+
+/* Matches .uptime-bar-legend */
+.skeleton-uptime-legend {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-xs);
+}
+
+.skeleton-legend-date {
+    height: 10px;
+    width: 50px;
+}
+
+/* Matches .server-logo - 32x32 */
+.skeleton-logo {
+    width: 32px;
+    height: 32px;
+}
+
+/* Matches .server-meta - flex column end-aligned, gap xs */
+.skeleton-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-xs);
+}
+
+/* Matches .server-response-time font-size 0.875rem ~14px */
+.skeleton-response {
+    height: 16px;
+    width: 65px;
+}
+
+/* Matches .server-last-check font-size 0.75rem ~12px */
+.skeleton-time {
+    height: 12px;
+    width: 50px;
+}
+
+/* Matches .server-actions */
+.skeleton-actions {
+    display: flex;
+    gap: var(--space-sm);
+    opacity: 0;
+}
+
+/* Matches .btn.btn-sm */
+.skeleton-btn {
+    height: 32px;
+    width: 55px;
+}
+
+/* Public page skeleton - 4 columns, no actions */
+.server-skeleton-public {
+    grid-template-columns: auto 1fr auto auto;
+}
+
+/* Status label in public page meta */
+.skeleton-status-label {
+    height: 14px;
+    width: 70px;
+    margin-top: var(--space-xs);
+}
+
+/* Server list smooth transition */
+.server-list {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.server-list.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Server item fade in from skeleton */
+.server-item.fade-in {
+    animation: serverFadeIn 0.4s ease forwards;
+}
+
+@keyframes serverFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive skeleton */
+@media (max-width: 768px) {
+    .server-skeleton {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto auto;
+        gap: var(--space-sm) var(--space-md);
+        padding: var(--space-md);
+    }
+
+    .skeleton-logo {
+        display: none;
+    }
+
+    .skeleton-meta {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        justify-content: space-between;
+        border-top: 1px solid var(--border-color);
+        padding-top: var(--space-xs);
+        margin-top: var(--space-xs);
+        width: 100%;
+    }
+
+    .skeleton-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+        margin-top: var(--space-xs);
+    }
+}
+
 /* Toast Notifications */
 .toast-container {
     position: fixed;

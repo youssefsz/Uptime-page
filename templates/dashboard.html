@@ -511,14 +511,56 @@
         }, 3000);
     }
 
+    // Create skeleton HTML for loading state
+    function createSkeletonHTML(count = 3) {
+        let html = '';
+        for (let i = 0; i < count; i++) {
+            html += `
+                <div class="server-skeleton">
+                    <div class="skeleton-status skeleton"></div>
+                    <div class="skeleton-info">
+                        <div class="skeleton-name skeleton"></div>
+                        <div class="skeleton-url skeleton"></div>
+                        <div class="skeleton-uptime-container">
+                            <div class="skeleton-uptime-bar skeleton"></div>
+                            <div class="skeleton-uptime-legend">
+                                <div class="skeleton-legend-date skeleton"></div>
+                                <div class="skeleton-legend-date skeleton"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="skeleton-logo skeleton"></div>
+                    <div class="skeleton-meta">
+                        <div class="skeleton-response skeleton"></div>
+                        <div class="skeleton-time skeleton"></div>
+                    </div>
+                    <div class="skeleton-actions">
+                        <div class="skeleton-btn skeleton"></div>
+                        <div class="skeleton-btn skeleton"></div>
+                        <div class="skeleton-btn skeleton"></div>
+                    </div>
+                </div>
+            `;
+        }
+        return html;
+    }
+
+    // Show skeleton loading state
+    function showSkeletons() {
+        const serverList = document.getElementById('serverList');
+        serverList.innerHTML = createSkeletonHTML(3);
+        serverList.style.display = 'flex';
+    }
+
     // Create server element
     function createServerElement(server, index, animate = true) {
         const statusClass = server.current_status ? server.current_status.toLowerCase() : 'unknown';
 
         const div = document.createElement('div');
-        div.className = animate ? 'server-item entering' : 'server-item';
+        div.className = animate ? 'server-item fade-in' : 'server-item';
         if (animate) {
-            div.style.animationDelay = (index * 50) + 'ms';
+            div.style.animationDelay = (index * 80) + 'ms';
+            div.style.opacity = '0';
         }
         div.dataset.serverId = server.id;
 
@@ -567,6 +609,15 @@
 
     // Load servers
     async function loadServers() {
+        const serverList = document.getElementById('serverList');
+        const emptyState = document.getElementById('emptyState');
+        const chartContainer = document.getElementById('chartContainer');
+
+        // Show skeletons on initial load
+        if (isInitialLoad) {
+            showSkeletons();
+        }
+
         try {
             // Use the new endpoint with uptime bars
             const response = await fetch(`${API_BASE}/servers/with-bars?days=30`);
@@ -576,10 +627,6 @@
             }
 
             servers = await response.json();
-
-            const serverList = document.getElementById('serverList');
-            const emptyState = document.getElementById('emptyState');
-            const chartContainer = document.getElementById('chartContainer');
 
             if (servers.length === 0) {
                 serverList.style.display = 'none';
@@ -602,9 +649,11 @@
                 // Load history (initial)
                 if (isInitialLoad) {
                     loadServerHistory('all');
+                    // Small delay to ensure skeleton animation completes smoothly
+                    await new Promise(resolve => setTimeout(resolve, 300));
                 }
 
-                // Clear and rebuild using fragment to avoid flickering
+                // Clear and rebuild using fragment for smooth transition
                 const fragment = document.createDocumentFragment();
                 servers.forEach((server, index) => {
                     fragment.appendChild(createServerElement(server, index, isInitialLoad));
@@ -622,6 +671,11 @@
         } catch (error) {
             console.error('Error loading servers:', error);
             showToast('Failed to load servers', 'error');
+            // On error, still hide skeletons if this was initial load
+            if (isInitialLoad) {
+                serverList.innerHTML = '';
+                isInitialLoad = false;
+            }
         }
     }
 
