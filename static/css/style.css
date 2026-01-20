@@ -1087,30 +1087,15 @@ a:hover {
         font-size: 1.5rem;
     }
 
-    /* Fixed tooltips on mobile to prevent going off-screen */
-    .uptime-bar-segment:hover::after {
-        position: fixed;
-        top: auto;
-        bottom: 20px;
-        left: var(--space-md);
-        right: var(--space-md);
-        width: auto;
-        transform: none;
-        white-space: normal;
-        background-color: var(--bg-secondary);
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
-        padding: var(--space-md);
-        border-radius: 8px;
-        border: 2px solid var(--border-color);
-        z-index: 2000;
-        text-align: center;
-        font-size: 0.8rem;
+    /* Disable tooltips on mobile */
+    .uptime-bar-segment::after,
+    .uptime-bar-segment::before {
+        display: none !important;
     }
 
-    /* Add a small arrow/indicator that something is hoverable on touch */
+    /* Slightly wider segments on mobile for easier touch */
     .uptime-bar-segment {
         min-width: 6px;
-        /* Slightly wider on mobile for easier touch */
     }
 
     .dashboard-header {
@@ -1330,12 +1315,25 @@ a:hover {
     visibility: visible;
 }
 
-/* Ensure tooltips don't get cut off on desktop too */
-.uptime-bar-segment::after {
-    max-width: 300px;
-    white-space: normal;
-    text-align: center;
-    line-height: 1.4;
+/* Tooltip arrow indicator */
+.uptime-bar-segment::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--border-color);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast), visibility var(--transition-fast);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.uptime-bar-segment:hover::before {
+    opacity: 1;
+    visibility: visible;
 }
 
 /* Uptime bar legend */
