@@ -374,11 +374,33 @@ a:hover {
 }
 
 .logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
     font-family: var(--font-mono);
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--text-primary);
     letter-spacing: -0.03em;
+    transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.logo:hover {
+    transform: translateY(-1px);
+    color: var(--text-primary);
+}
+
+.logo svg {
+    flex-shrink: 0;
+    transition: transform var(--transition-base);
+}
+
+.logo:hover svg {
+    transform: scale(1.1);
+}
+
+[data-theme="dark"] .logo svg {
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.1));
 }
 
 .nav {
@@ -825,9 +847,17 @@ a:hover {
 }
 
 .login-header h1 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
     font-family: var(--font-mono);
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     margin-bottom: var(--space-xs);
+}
+
+.login-header h1 svg {
+    flex-shrink: 0;
 }
 
 .login-header p {
