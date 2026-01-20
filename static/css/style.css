@@ -254,7 +254,7 @@ a:hover {
     background-color: var(--color-gray-900);
 }
 
-.server-item.entering {
+.entering {
     opacity: 0;
     transform: translateY(10px);
     animation: slideUp var(--transition-smooth) both;
@@ -1111,4 +1111,70 @@ a:hover {
     background-color: var(--color-gray-900);
     margin: var(--space-sm) 0;
     transition: all var(--transition-fast);
+}
+
+/* Loading Spinner */
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: none;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+    vertical-align: middle;
+}
+
+.loading .spinner {
+    display: inline-block;
+}
+
+.loading .btn-text {
+    display: none;
+}
+
+@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Password Visibility Toggle */
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper .form-input {
+    padding-right: var(--space-3xl);
+}
+
+.password-toggle {
+    position: absolute;
+    right: var(--space-md);
+    background: none;
+    border: none;
+    color: var(--color-gray-500);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast);
+    z-index: 2;
+}
+
+.password-toggle:hover {
+    color: var(--color-white);
+}
+
+.password-toggle svg {
+    width: 20px;
+    height: 20px;
 }
