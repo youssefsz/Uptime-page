@@ -290,9 +290,11 @@ a:hover {
 
 /* Layout */
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
+    /* Increased for better use of wide screens */
     margin: 0 auto;
-    padding: 0 var(--space-lg);
+    padding: 0 var(--space-xl);
+    /* More side breathing room */
 }
 
 .page {
@@ -493,7 +495,7 @@ a:hover {
     display: grid;
     grid-template-columns: auto 1fr auto auto auto;
     gap: var(--space-lg);
-    align-items: start;
+    align-items: center;
     transition: background-color var(--transition-theme), border-color var(--transition-theme), box-shadow var(--transition-theme), transform var(--transition-smooth), opacity var(--transition-smooth);
     transform: translateY(0);
     opacity: 1;
@@ -1444,9 +1446,7 @@ a:hover {
     gap: 2px;
     height: 32px;
     border-radius: 4px;
-    /* overflow: hidden removed to allow tooltips to show */
     background-color: var(--bg-tertiary);
-    /* Stable background before bars load */
 }
 
 @media (max-width: 768px) {
@@ -1498,51 +1498,49 @@ a:hover {
     z-index: 1;
 }
 
-/* Tooltip for uptime bar */
-.uptime-bar-segment::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--bg-secondary);
-    border: var(--border-width) solid var(--border-color);
-    padding: var(--space-xs) var(--space-sm);
-    font-size: 0.7rem;
-    font-family: var(--font-mono);
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity var(--transition-fast), visibility var(--transition-fast);
-    z-index: 10;
-    pointer-events: none;
-}
-
-.uptime-bar-segment:hover::after {
-    opacity: 1;
-    visibility: visible;
-}
-
-/* Tooltip arrow indicator */
+/* Tooltip styling is now handled via JS for dynamic positioning */
+.uptime-bar-segment::after,
 .uptime-bar-segment::before {
-    content: '';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: var(--border-color);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity var(--transition-fast), visibility var(--transition-fast);
-    z-index: 10;
-    pointer-events: none;
+    display: none !important;
 }
 
-.uptime-bar-segment:hover::before {
-    opacity: 1;
-    visibility: visible;
+/* New Dynamic Tooltip */
+.custom-tooltip {
+    position: fixed;
+    z-index: 9999;
+    padding: var(--space-xs) var(--space-sm);
+    /* Reverted to compact padding */
+    background-color: var(--header-bg);
+    /* Glassy background */
+    backdrop-filter: blur(12px);
+    border: var(--border-width) solid var(--border-hover);
+    color: var(--text-primary);
+    font-size: 0.75rem;
+    /* Compact font size */
+    font-family: var(--font-mono);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    /* Less aggressive animation */
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.4);
+    white-space: nowrap;
+    border-radius: 6px;
+    max-width: 90vw;
+    line-height: 1.4;
+    text-align: center;
 }
+
+.custom-tooltip.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+[data-theme="dark"] .custom-tooltip {
+    background-color: #1a1a1a;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
 
 /* Uptime bar legend */
 .uptime-bar-legend {
