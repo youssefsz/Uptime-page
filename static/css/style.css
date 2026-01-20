@@ -812,7 +812,7 @@ a:hover {
     gap: 2px;
     height: 32px;
     border-radius: 4px;
-    overflow: hidden;
+    /* overflow: hidden removed to allow tooltips to show */
     background-color: var(--color-gray-900);
     /* Stable background before bars load */
 }
@@ -831,16 +831,20 @@ a:hover {
     background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
 }
 
-.uptime-bar-segment.down {
-    background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+.uptime-bar-segment.degraded {
+    background: linear-gradient(180deg, #facc15 0%, #ca8a04 100%);
 }
 
 .uptime-bar-segment.partial {
     background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
 }
 
+.uptime-bar-segment.down {
+    background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+}
+
 .uptime-bar-segment.unknown {
-    background-color: var(--color-gray-600);
+    background-color: var(--color-gray-700);
     opacity: 0.5;
 }
 
@@ -881,6 +885,50 @@ a:hover {
     margin-top: var(--space-xs);
     font-size: 0.65rem;
     color: var(--color-gray-500);
+}
+
+/* Status legend */
+.status-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-lg);
+    margin-top: var(--space-lg);
+    padding-top: var(--space-md);
+    border-top: var(--border-width) solid var(--border-color);
+}
+
+.status-legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.75rem;
+    color: var(--color-gray-400);
+}
+
+.status-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+.status-legend-dot.up {
+    background: var(--color-up);
+}
+
+.status-legend-dot.degraded {
+    background: #facc15;
+}
+
+.status-legend-dot.partial {
+    background: #f59e0b;
+}
+
+.status-legend-dot.down {
+    background: var(--color-down);
+}
+
+.status-legend-dot.unknown {
+    background: var(--color-gray-700);
 }
 
 

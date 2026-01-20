@@ -229,16 +229,22 @@ async def cleanup_old_records(db: AsyncSession, days: int = 30) -> int:
     return result.rowcount
 
 
-async def get_uptime_bars(
-    db: AsyncSession, 
-    server_id: int, 
-    days: int = 30
+async def _calculate_bars(
+    db: AsyncSession,
+    server_id: int,
+    now: datetime,
+    count: int,
+    resolution: str = "day"
 ) -> list[dict]:
-    """Get aggregated uptime data for bar visualization."""
+    """Helper to calculate bars for a given resolution and count."""
     from collections import defaultdict
     
-    since = datetime.now(timezone.utc) - timedelta(days=days)
-    
+    if resolution == "day":
+        since = now - timedelta(days=count)
+        # records are fetched from 'since' to 'now'
+    else:  # hour
+        since = now - timedelta(hours=count)
+        
     result = await db.execute(
         select(UptimeRecord)
         .where(
@@ -250,55 +256,102 @@ async def get_uptime_bars(
     
     records = list(result.scalars().all())
     
-    # Group records by day
-    daily_data = defaultdict(lambda: {"up": 0, "down": 0, "total": 0})
+    # Group results
+    # Each group stores: up count, down count, total count, and total response time (for avg)
+    grouped_data = defaultdict(lambda: {"up": 0, "down": 0, "total": 0, "response_time_sum": 0.0, "response_time_count": 0})
     
     for record in records:
-        day_key = record.timestamp.date()
-        daily_data[day_key]["total"] += 1
-        if record.status == StatusEnum.UP:
-            daily_data[day_key]["up"] += 1
+        if resolution == "day":
+            key = record.timestamp.date()
         else:
-            daily_data[day_key]["down"] += 1
-    
-    # Generate bars for each day in the range
-    bars = []
-    current_date = (datetime.now(timezone.utc) - timedelta(days=days - 1)).date()
-    end_date = datetime.now(timezone.utc).date()
-    
-    while current_date <= end_date:
-        if current_date in daily_data:
-            data = daily_data[current_date]
-            total = data["total"]
-            uptime_pct = (data["up"] / total * 100) if total > 0 else 0
-            
-            # Determine status: up (100%), partial (50-99%), down (<50%), unknown (no data)
-            if uptime_pct >= 100:
-                status = "up"
-            elif uptime_pct >= 50:
-                status = "partial"
-            elif total > 0:
-                status = "down"
-            else:
-                status = "unknown"
-            
-            bars.append({
-                "date": datetime.combine(current_date, datetime.min.time()),
-                "status": status,
-                "uptime_percentage": round(uptime_pct, 2),
-                "checks": total
-            })
-        else:
-            bars.append({
-                "date": datetime.combine(current_date, datetime.min.time()),
-                "status": "unknown",
-                "uptime_percentage": 0,
-                "checks": 0
-            })
+            key = record.timestamp.replace(minute=0, second=0, microsecond=0)
         
-        current_date += timedelta(days=1)
+        grouped_data[key]["total"] += 1
+        if record.status == StatusEnum.UP:
+            grouped_data[key]["up"] += 1
+        else:
+            grouped_data[key]["down"] += 1
+            
+        if record.response_time_ms is not None:
+            grouped_data[key]["response_time_sum"] += record.response_time_ms
+            grouped_data[key]["response_time_count"] += 1
+            
+    bars = []
     
+    # Generate points
+    if resolution == "day":
+        current = (now - timedelta(days=count - 1)).date()
+        end = now.date()
+    else:
+        current = (now - timedelta(hours=count - 1)).replace(minute=0, second=0, microsecond=0)
+        end = now.replace(minute=0, second=0, microsecond=0)
+        
+    loop_count = count
+    for i in range(loop_count):
+        if resolution == "day":
+            key = current
+        else:
+            key = current
+            
+        data = grouped_data.get(key, {"up": 0, "down": 0, "total": 0, "response_time_sum": 0, "response_time_count": 0})
+        total = data["total"]
+        uptime_pct = (data["up"] / total * 100) if total > 0 else 0
+        avg_latency = (data["response_time_sum"] / data["response_time_count"]) if data["response_time_count"] > 0 else 0
+        
+        # Professional Status Logic:
+        # - Up (Green): 100% Up and < 1000ms latency
+        # - Degraded (Yellow): 100% Up but >= 1000ms latency
+        # - Partial (Orange): 50% - 99.9% Up
+        # - Down (Red): < 50% Up
+        # - Unknown (Gray): No data
+        
+        if total == 0:
+            status = "unknown"
+        elif uptime_pct < 50:
+            status = "down"
+        elif uptime_pct < 100:
+            status = "partial"
+        elif avg_latency >= 1000: # Threshold for degraded performance
+            status = "degraded"
+        else:
+            status = "up"
+            
+        bars.append({
+            "date": datetime.combine(current, datetime.min.time()).replace(tzinfo=timezone.utc) if resolution == "day" else current,
+            "status": status,
+            "uptime_percentage": round(uptime_pct, 2),
+            "checks": total,
+            "avg_response_time_ms": round(avg_latency, 2) if total > 0 else None
+        })
+        
+        if resolution == "day":
+            current += timedelta(days=1)
+        else:
+            current += timedelta(hours=1)
+            
     return bars
+
+
+async def get_uptime_bars(
+    db: AsyncSession, 
+    server: Server,
+    requested_days: int = 30
+) -> list[dict]:
+    """Get aggregated uptime data for bar visualization with dynamic resolution."""
+    now = datetime.now(timezone.utc)
+    
+    # Calculate age in days
+    age = now - server.created_at
+    
+    if age < timedelta(days=1):
+        # If less than a day, show last 24 hours (hourly)
+        return await _calculate_bars(db, server.id, now, count=24, resolution="hour")
+    elif age < timedelta(days=7):
+        # If less than a week, show last 7 days (daily)
+        return await _calculate_bars(db, server.id, now, count=7, resolution="day")
+    else:
+        # Otherwise show last 30 days (or requested_days)
+        return await _calculate_bars(db, server.id, now, count=requested_days, resolution="day")
 
 
 async def get_servers_with_uptime_bars(
@@ -320,7 +373,7 @@ async def get_servers_with_uptime_bars(
         record = latest_record.scalar_one_or_none()
         
         # Get uptime bars
-        bars = await get_uptime_bars(db, server.id, days)
+        bars = await get_uptime_bars(db, server, days)
         
         # Calculate overall uptime percentage from bars
         total_checks = sum(b["checks"] for b in bars)

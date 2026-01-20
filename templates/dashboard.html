@@ -56,6 +56,31 @@
                 </div>
             </div>
 
+            <!-- Status Legend (Top) -->
+            <div class="status-legend"
+                style="margin-bottom: var(--space-md); border-top: none; padding-top: 0; border-bottom: var(--border-width) solid var(--border-color); padding-bottom: var(--space-md);">
+                <div class="status-legend-item" title="Server is up and responding quickly">
+                    <div class="status-legend-dot up"></div>
+                    <span>Operational</span>
+                </div>
+                <div class="status-legend-item" title="Server is up but responding very slowly (>1000ms)">
+                    <div class="status-legend-dot degraded"></div>
+                    <span>Degraded Performance</span>
+                </div>
+                <div class="status-legend-item" title="Server is experiencing intermittent downtime (50-99% up)">
+                    <div class="status-legend-dot partial"></div>
+                    <span>Partial Outage</span>
+                </div>
+                <div class="status-legend-item" title="Server is completely down or failing most checks (<50% up)">
+                    <div class="status-legend-dot down"></div>
+                    <span>Major Outage</span>
+                </div>
+                <div class="status-legend-item" title="No monitoring data available for this period">
+                    <div class="status-legend-dot unknown"></div>
+                    <span>No Data</span>
+                </div>
+            </div>
+
             <!-- Server List -->
             <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
                 <span>Servers</span>
@@ -64,6 +89,30 @@
             </div>
             <div class="server-list" id="serverList">
                 <!-- Servers will be loaded here -->
+            </div>
+
+            <!-- Status Legend -->
+            <div class="status-legend">
+                <div class="status-legend-item" title="Server is up and responding quickly">
+                    <div class="status-legend-dot up"></div>
+                    <span>Operational</span>
+                </div>
+                <div class="status-legend-item" title="Server is up but responding very slowly (>1000ms)">
+                    <div class="status-legend-dot degraded"></div>
+                    <span>Degraded Performance</span>
+                </div>
+                <div class="status-legend-item" title="Server is experiencing intermittent downtime (50-99% up)">
+                    <div class="status-legend-dot partial"></div>
+                    <span>Partial Outage</span>
+                </div>
+                <div class="status-legend-item" title="Server is completely down or failing most checks (<50% up)">
+                    <div class="status-legend-dot down"></div>
+                    <span>Major Outage</span>
+                </div>
+                <div class="status-legend-item" title="No monitoring data available for this period">
+                    <div class="status-legend-dot unknown"></div>
+                    <span>No Data</span>
+                </div>
             </div>
 
             <div class="empty-state" id="emptyState" style="display: none;">
@@ -306,8 +355,16 @@
     }
 
     // Format date for tooltip
-    function formatDate(dateStr) {
+    function formatDate(dateStr, includeTime = false) {
         const date = new Date(dateStr);
+        if (includeTime) {
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
@@ -317,13 +374,37 @@
             return '<div class="uptime-bar-container"><div class="uptime-bar-label">No uptime data</div></div>';
         }
 
+        // Detect if hourly or daily based on the interval between first two bars
+        const isHourly = uptimeBars.length > 1 &&
+            (new Date(uptimeBars[1].date) - new Date(uptimeBars[0].date)) < 82800000; // less than 23h
+
         const barsHtml = uptimeBars.map(bar => {
-            const tooltip = `${formatDate(bar.date)}: ${bar.uptime_percentage.toFixed(1)}% (${bar.checks} checks)`;
+            const statusNames = {
+                'up': 'Operational',
+                'degraded': 'Degraded Performance',
+                'partial': 'Partial Outage',
+                'down': 'Major Outage',
+                'unknown': 'No Data'
+            };
+            const statusDefinitions = {
+                'up': '100% Up, fast response',
+                'degraded': '100% Up, slow response',
+                'partial': 'Minor outages (50-99% Up)',
+                'down': 'Major outages (<50% Up)',
+                'unknown': 'No monitoring data'
+            };
+            const statusName = statusNames[bar.status] || bar.status;
+            const definition = statusDefinitions[bar.status] || '';
+            let tooltip = `${formatDate(bar.date, isHourly)}: ${statusName} (${bar.uptime_percentage.toFixed(1)}%) - ${definition}`;
+            if (bar.avg_response_time_ms) {
+                tooltip += ` | Latency: ${formatResponseTime(bar.avg_response_time_ms)}`;
+            }
             return `<div class="uptime-bar-segment ${bar.status}" data-tooltip="${tooltip}"></div>`;
         }).join('');
 
-        const firstDate = formatDate(uptimeBars[0].date);
-        const lastDate = formatDate(uptimeBars[uptimeBars.length - 1].date);
+        // Get first and last date for legend
+        const firstDate = formatDate(uptimeBars[0].date, isHourly);
+        const lastDate = formatDate(uptimeBars[uptimeBars.length - 1].date, isHourly);
 
         return `
             <div class="uptime-bar-container">

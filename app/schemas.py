@@ -117,9 +117,10 @@ class UptimeHistory(BaseModel):
 class UptimeBarItem(BaseModel):
     """Single bar item for uptime visualization."""
     date: datetime
-    status: str  # "up", "down", "partial", "unknown"
+    status: str  # "up", "down", "partial", "unknown", "degraded"
     uptime_percentage: float
     checks: int
+    avg_response_time_ms: float | None = None
 
 
 class ServerWithUptimeBars(ServerResponse):
