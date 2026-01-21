@@ -341,17 +341,20 @@ async def get_uptime_bars(
     now = datetime.now(timezone.utc)
     
     # Calculate age in days
-    age = now - server.created_at
+    # age = now - server.created_at
     
-    if age < timedelta(days=1):
-        # If less than a day, show last 24 hours (hourly)
-        return await _calculate_bars(db, server.id, now, count=24, resolution="hour")
-    elif age < timedelta(days=7):
-        # If less than a week, show last 7 days (daily)
-        return await _calculate_bars(db, server.id, now, count=7, resolution="day")
-    else:
-        # Otherwise show last 30 days (or requested_days)
-        return await _calculate_bars(db, server.id, now, count=requested_days, resolution="day")
+    # User requested to always show last 24 hours
+    return await _calculate_bars(db, server.id, now, count=24, resolution="hour")
+    
+    # if age < timedelta(days=1):
+    #     # If less than a day, show last 24 hours (hourly)
+    #     return await _calculate_bars(db, server.id, now, count=24, resolution="hour")
+    # elif age < timedelta(days=7):
+    #     # If less than a week, show last 7 days (daily)
+    #     return await _calculate_bars(db, server.id, now, count=7, resolution="day")
+    # else:
+    #     # Otherwise show last 30 days (or requested_days)
+    #     return await _calculate_bars(db, server.id, now, count=requested_days, resolution="day")
 
 
 async def get_servers_with_uptime_bars(
