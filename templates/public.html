@@ -331,7 +331,7 @@
         <div class="server-meta">
             <div class="server-response-time">${formatResponseTime(server.response_time_ms)}</div>
             <div class="server-last-check">${timeAgo(server.last_ping)}</div>
-            <div class="uptime-bar-percentage" style="margin-top: var(--space-xs);">● ${statusLabel}</div>
+            <div class="uptime-bar-percentage ${statusClass}" style="margin-top: var(--space-xs);">● ${statusLabel}</div>
         </div>
     `;
 

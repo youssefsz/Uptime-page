@@ -1469,8 +1469,28 @@ a:hover {
 .uptime-bar-percentage {
     font-family: var(--font-mono);
     font-size: 0.875rem;
-    color: var(--color-up);
+    color: var(--text-muted);
     font-weight: 500;
+}
+
+.uptime-bar-percentage.up {
+    color: var(--color-up);
+}
+
+.uptime-bar-percentage.down {
+    color: var(--color-down);
+}
+
+.uptime-bar-percentage.degraded {
+    color: var(--color-degraded);
+}
+
+.uptime-bar-percentage.partial {
+    color: var(--color-partial);
+}
+
+.uptime-bar-percentage.unknown {
+    color: var(--color-unknown);
 }
 
 .uptime-bar {
