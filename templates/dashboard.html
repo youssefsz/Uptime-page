@@ -622,7 +622,7 @@
 
         try {
             // Use the new endpoint with uptime bars
-            const response = await fetch(`${API_BASE}/servers/with-bars?days=30`);
+            const response = await fetch(`${API_BASE}/servers/with-bars?days=1`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch servers');

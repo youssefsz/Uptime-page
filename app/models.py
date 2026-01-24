@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, func, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -61,6 +61,9 @@ class UptimeRecord(Base):
     """Uptime record model for storing ping results."""
     
     __tablename__ = "uptime_records"
+    __table_args__ = (
+        Index("ix_uptime_server_timestamp", "server_id", "timestamp"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     server_id: Mapped[int] = mapped_column(

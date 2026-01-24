@@ -114,7 +114,7 @@ async def get_all_servers(
 @router.get("/with-bars", response_model=list[ServerWithUptimeBars])
 async def get_servers_with_uptime_bars(
     db: Annotated[AsyncSession, Depends(get_db)],
-    days: int = 30
+    days: int = 1
 ) -> list[ServerWithUptimeBars]:
     """Get all servers with uptime bar visualization data (public)."""
     return await server_service.get_servers_with_uptime_bars(db, days)
