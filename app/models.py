@@ -50,7 +50,7 @@ class Server(Base):
         "UptimeRecord",
         back_populates="server",
         cascade="all, delete-orphan",
-        lazy="selectin"
+        # lazy="selectin"  # Removed eager loading for performance
     )
 
     def __repr__(self) -> str:
