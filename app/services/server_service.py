@@ -176,13 +176,21 @@ async def get_server_stats(db: AsyncSession, server_id: int) -> dict:
     if not server:
         return None
     
-    # Get all records for this server
-    all_records = await db.execute(
-        select(UptimeRecord).where(UptimeRecord.server_id == server_id)
-    )
-    records = list(all_records.scalars().all())
+    # 1. Calculate overall stats using SQL aggregation
+    stmt_overall = select(
+        func.count().label("total_checks"),
+        func.sum(case((UptimeRecord.status == StatusEnum.UP, 1), else_=0)).label("up_checks"),
+        func.avg(UptimeRecord.response_time_ms).label("avg_response_time")
+    ).where(UptimeRecord.server_id == server_id)
     
-    if not records:
+    result_overall = await db.execute(stmt_overall)
+    row_overall = result_overall.one()
+    
+    total_checks = row_overall.total_checks or 0
+    up_checks = row_overall.up_checks or 0
+    avg_response_time = row_overall.avg_response_time
+    
+    if total_checks == 0:
         return {
             "server_id": server_id,
             "server_name": server.name,
@@ -191,28 +199,33 @@ async def get_server_stats(db: AsyncSession, server_id: int) -> dict:
             "avg_response_time_ms": None,
             "last_24h_uptime": 0.0
         }
+
+    uptime_percentage = (up_checks / total_checks) * 100
     
-    # Calculate overall stats
-    total_checks = len(records)
-    up_checks = sum(1 for r in records if r.status == StatusEnum.UP)
-    uptime_percentage = (up_checks / total_checks) * 100 if total_checks > 0 else 0
-    
-    # Calculate average response time
-    response_times = [r.response_time_ms for r in records if r.response_time_ms is not None]
-    avg_response_time = sum(response_times) / len(response_times) if response_times else None
-    
-    # Calculate last 24h uptime
+    # 2. Calculate last 24h uptime
     since_24h = datetime.now(timezone.utc) - timedelta(hours=24)
-    recent_records = [r for r in records if r.timestamp >= since_24h]
-    recent_up = sum(1 for r in recent_records if r.status == StatusEnum.UP)
-    last_24h_uptime = (recent_up / len(recent_records)) * 100 if recent_records else 0
+    stmt_24h = select(
+        func.count().label("total"),
+        func.sum(case((UptimeRecord.status == StatusEnum.UP, 1), else_=0)).label("up_count")
+    ).where(
+        UptimeRecord.server_id == server_id,
+        UptimeRecord.timestamp >= since_24h
+    )
+    
+    result_24h = await db.execute(stmt_24h)
+    row_24h = result_24h.one()
+    
+    total_24h = row_24h.total or 0
+    up_24h = row_24h.up_count or 0
+    
+    last_24h_uptime = (up_24h / total_24h * 100) if total_24h > 0 else 0
     
     return {
         "server_id": server_id,
         "server_name": server.name,
         "total_checks": total_checks,
         "uptime_percentage": round(uptime_percentage, 2),
-        "avg_response_time_ms": round(avg_response_time, 2) if avg_response_time else None,
+        "avg_response_time_ms": round(avg_response_time, 2) if avg_response_time is not None else None,
         "last_24h_uptime": round(last_24h_uptime, 2)
     }
 

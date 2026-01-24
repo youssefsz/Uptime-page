@@ -131,6 +131,7 @@ async def login_page(request: Request):
 # ============== Health Check ==============
 
 @app.get("/health")
+@limiter.exempt
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": "uptime-monitor"}

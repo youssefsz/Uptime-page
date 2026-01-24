@@ -361,8 +361,29 @@
     async function loadServers() {
         const serverList = document.getElementById('serverList');
         const emptyState = document.getElementById('emptyState');
+        const CACHE_KEY = 'public_servers_cache';
+        const CACHE_DURATION = 60 * 1000; // 1 minute
 
-        // Show skeletons on initial load
+        // Check cache first
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+            try {
+                const { timestamp, data } = JSON.parse(cached);
+                const now = Date.now();
+                
+                // If cache is valid (less than 1 minute old), use it
+                if (now - timestamp < CACHE_DURATION) {
+                    console.log('Using cached data');
+                    renderServers(data);
+                    return;
+                }
+            } catch (e) {
+                console.error('Cache parse error', e);
+                localStorage.removeItem(CACHE_KEY);
+            }
+        }
+
+        // Show skeletons on initial load (only if no cache or cache expired)
         if (isInitialLoad) {
             showSkeletons();
         }
@@ -376,33 +397,14 @@
             }
 
             servers = await response.json();
+            
+            // Update cache
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                timestamp: Date.now(),
+                data: servers
+            }));
 
-            if (servers.length === 0) {
-                serverList.style.display = 'none';
-                emptyState.style.display = 'block';
-            } else {
-                serverList.style.display = 'flex';
-                emptyState.style.display = 'none';
-
-                // Small delay to ensure skeleton animation completes smoothly
-                if (isInitialLoad) {
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                }
-
-                // Clear and rebuild using fragment for smooth transition
-                const fragment = document.createDocumentFragment();
-                servers.forEach((server, index) => {
-                    fragment.appendChild(createServerElement(server, index, isInitialLoad));
-                });
-
-                serverList.innerHTML = '';
-                serverList.appendChild(fragment);
-
-                // After first load, disable animations for refreshes
-                isInitialLoad = false;
-            }
-
-            updateSummary(servers);
+            renderServers(servers);
 
         } catch (error) {
             console.error('Error loading servers:', error);
@@ -414,12 +416,40 @@
         }
     }
 
+    function renderServers(serversData) {
+        const serverList = document.getElementById('serverList');
+        const emptyState = document.getElementById('emptyState');
+
+        servers = serversData; // Update global variable
+
+        if (servers.length === 0) {
+            serverList.style.display = 'none';
+            emptyState.style.display = 'block';
+        } else {
+            serverList.style.display = 'flex';
+            emptyState.style.display = 'none';
+
+            // Clear and rebuild using fragment for smooth transition
+            const fragment = document.createDocumentFragment();
+            servers.forEach((server, index) => {
+                fragment.appendChild(createServerElement(server, index, isInitialLoad));
+            });
+
+            serverList.innerHTML = '';
+            serverList.appendChild(fragment);
+
+            // After first load, disable animations for refreshes
+            isInitialLoad = false;
+        }
+
+        updateSummary(servers);
+    }
+
     // Initialize
     document.addEventListener('DOMContentLoaded', function () {
         loadServers();
-
-        // Auto-refresh
-        setInterval(loadServers, REFRESH_INTERVAL);
+        
+        // Auto-refresh removed as requested
     });
 </script>
 {% endblock %}

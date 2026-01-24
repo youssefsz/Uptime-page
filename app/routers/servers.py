@@ -2,11 +2,12 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
 from app.database import get_db
+from app.limiter import limiter
 from app.schemas import (
     ServerCreate,
     ServerReorder,
@@ -104,7 +105,9 @@ async def ping_server_manually(
 # ============== Public Routes ==============
 
 @router.get("", response_model=list[ServerWithStatus])
+@limiter.limit("60/minute")
 async def get_all_servers(
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db)]
 ) -> list[ServerWithStatus]:
     """Get all servers with their current status (public)."""
@@ -112,16 +115,22 @@ async def get_all_servers(
 
 
 @router.get("/with-bars", response_model=list[ServerWithUptimeBars])
+@limiter.limit("20/minute")
 async def get_servers_with_uptime_bars(
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     days: int = 1
 ) -> list[ServerWithUptimeBars]:
     """Get all servers with uptime bar visualization data (public)."""
+    if days > 30:
+        days = 30
     return await server_service.get_servers_with_uptime_bars(db, days)
 
 
 @router.get("/{server_id}", response_model=ServerWithStatus)
+@limiter.limit("60/minute")
 async def get_server(
+    request: Request,
     server_id: int,
     db: Annotated[AsyncSession, Depends(get_db)]
 ) -> ServerWithStatus:
@@ -139,12 +148,17 @@ async def get_server(
 
 
 @router.get("/{server_id}/history", response_model=list[UptimeRecordResponse])
+@limiter.limit("20/minute")
 async def get_server_history(
+    request: Request,
     server_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
     hours: int = 24
 ) -> list[UptimeRecordResponse]:
     """Get uptime history for a server (public)."""
+    if hours > 48:
+        hours = 48
+
     # Verify server exists
     server = await server_service.get_server(db, server_id)
     
@@ -159,16 +173,22 @@ async def get_server_history(
 
 
 @router.get("/history/all", response_model=dict[int, list[UptimeRecordResponse]])
+@limiter.limit("20/minute")
 async def get_all_server_history(
+    request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     hours: int = 24
 ) -> dict[int, list[UptimeRecordResponse]]:
     """Get uptime history for all servers (public)."""
+    if hours > 48:
+        hours = 48
     return await server_service.get_all_servers_uptime_history(db, hours)
 
 
 @router.get("/{server_id}/stats")
+@limiter.limit("20/minute")
 async def get_server_stats(
+    request: Request,
     server_id: int,
     db: Annotated[AsyncSession, Depends(get_db)]
 ) -> dict:

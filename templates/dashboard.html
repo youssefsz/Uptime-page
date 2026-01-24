@@ -614,6 +614,27 @@
         const serverList = document.getElementById('serverList');
         const emptyState = document.getElementById('emptyState');
         const chartContainer = document.getElementById('chartContainer');
+        const CACHE_KEY = 'dashboard_servers_cache';
+        const CACHE_DURATION = 60 * 1000; // 1 minute
+
+        // Check cache first
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached && !isReorderMode) { // Don't use cache in reorder mode
+             try {
+                const { timestamp, data } = JSON.parse(cached);
+                const now = Date.now();
+                
+                // If cache is valid (less than 1 minute old), use it
+                if (now - timestamp < CACHE_DURATION) {
+                    console.log('Using cached data');
+                    renderDashboard(data);
+                    return;
+                }
+            } catch (e) {
+                console.error('Cache parse error', e);
+                localStorage.removeItem(CACHE_KEY);
+            }
+        }
 
         // Show skeletons on initial load
         if (isInitialLoad) {
@@ -629,46 +650,14 @@
             }
 
             servers = await response.json();
+            
+            // Update cache
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                timestamp: Date.now(),
+                data: servers
+            }));
 
-            if (servers.length === 0) {
-                serverList.style.display = 'none';
-                emptyState.style.display = 'block';
-                chartContainer.style.display = 'none';
-            } else {
-                serverList.style.display = 'flex';
-                emptyState.style.display = 'none';
-                chartContainer.style.display = 'block';
-
-                // Update server select
-                const select = document.getElementById('chartServerSelect');
-                const currentVal = select.value;
-                select.innerHTML = '<option value="all">All Servers</option>';
-                servers.forEach(server => {
-                    select.innerHTML += `<option value="${server.id}">${escapeHtml(server.name)}</option>`;
-                });
-                if (currentVal) select.value = currentVal;
-
-                // Load history (initial)
-                if (isInitialLoad) {
-                    loadServerHistory('all');
-                    // Small delay to ensure skeleton animation completes smoothly
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                }
-
-                // Clear and rebuild using fragment for smooth transition
-                const fragment = document.createDocumentFragment();
-                servers.forEach((server, index) => {
-                    fragment.appendChild(createServerElement(server, index, isInitialLoad));
-                });
-
-                serverList.innerHTML = '';
-                serverList.appendChild(fragment);
-
-                // After first load, disable animations for refreshes
-                isInitialLoad = false;
-            }
-
-            updateSummary(servers);
+            renderDashboard(servers);
 
         } catch (error) {
             console.error('Error loading servers:', error);
@@ -680,6 +669,55 @@
             }
         }
     }
+
+    async function renderDashboard(serversData) {
+        const serverList = document.getElementById('serverList');
+        const emptyState = document.getElementById('emptyState');
+        const chartContainer = document.getElementById('chartContainer');
+
+        servers = serversData; // Update global variable
+
+        if (servers.length === 0) {
+            serverList.style.display = 'none';
+            emptyState.style.display = 'block';
+            chartContainer.style.display = 'none';
+        } else {
+            serverList.style.display = 'flex';
+            emptyState.style.display = 'none';
+            chartContainer.style.display = 'block';
+
+            // Update server select
+            const select = document.getElementById('chartServerSelect');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="all">All Servers</option>';
+            servers.forEach(server => {
+                select.innerHTML += `<option value="${server.id}">${escapeHtml(server.name)}</option>`;
+            });
+            if (currentVal) select.value = currentVal;
+
+            // Load history (initial)
+            if (isInitialLoad) {
+                loadServerHistory('all');
+                // Small delay to ensure skeleton animation completes smoothly
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            // Clear and rebuild using fragment for smooth transition
+            const fragment = document.createDocumentFragment();
+            servers.forEach((server, index) => {
+                fragment.appendChild(createServerElement(server, index, isInitialLoad));
+            });
+
+            serverList.innerHTML = '';
+            serverList.appendChild(fragment);
+
+            // After first load, disable animations for refreshes
+            isInitialLoad = false;
+        }
+
+        updateSummary(servers);
+    }
+
 
     // Add/Edit Modal
     function openAddModal() {
@@ -1140,12 +1178,14 @@
             if (e.target === this) closeDeleteModal();
         });
 
-        // Auto-refresh (but not during reorder mode)
+        // Auto-refresh removed as requested
+        /*
         setInterval(() => {
             if (!isReorderMode) {
                 loadServers();
             }
         }, REFRESH_INTERVAL);
+        */
     });
 </script>
 {% endblock %}
