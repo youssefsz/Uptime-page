@@ -19,6 +19,29 @@ logger = logging.getLogger(__name__)
 # Global flag to control the ping loop
 _ping_task: asyncio.Task | None = None
 _running = False
+_http_client: httpx.AsyncClient | None = None
+
+
+async def init_http_client() -> None:
+    """Initialize the global HTTP client."""
+    global _http_client
+    if _http_client is None:
+        limits = httpx.Limits(max_keepalive_connections=20, max_connections=100)
+        _http_client = httpx.AsyncClient(
+            limits=limits,
+            timeout=settings.ping_timeout_seconds,
+            follow_redirects=True
+        )
+        logger.info("Global HTTP client initialized")
+
+
+async def close_http_client() -> None:
+    """Close the global HTTP client."""
+    global _http_client
+    if _http_client:
+        await _http_client.aclose()
+        _http_client = None
+        logger.info("Global HTTP client closed")
 
 
 async def ping_server(url: str, timeout: int = 10) -> tuple[StatusEnum, float | None]:
@@ -32,21 +55,29 @@ async def ping_server(url: str, timeout: int = 10) -> tuple[StatusEnum, float | 
     Returns:
         Tuple of (status, response_time_ms)
     """
+    global _http_client
+    
+    # Ensure client is initialized
+    if _http_client is None:
+        await init_http_client()
+        
     try:
         start_time = time.perf_counter()
         
-        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-            response = await client.get(url)
+        # Use the persistent client
+        # Note: We pass timeout here to override client default if needed, 
+        # though usually it matches settings.ping_timeout_seconds
+        response = await _http_client.get(url, timeout=timeout)
             
-            end_time = time.perf_counter()
-            response_time_ms = (end_time - start_time) * 1000
-            
-            # Consider 2xx and 3xx as UP
-            if response.status_code < 400:
-                return StatusEnum.UP, round(response_time_ms, 2)
-            else:
-                logger.warning(f"Server {url} returned status {response.status_code}")
-                return StatusEnum.DOWN, round(response_time_ms, 2)
+        end_time = time.perf_counter()
+        response_time_ms = (end_time - start_time) * 1000
+        
+        # Consider 2xx and 3xx as UP
+        if response.status_code < 400:
+            return StatusEnum.UP, round(response_time_ms, 2)
+        else:
+            logger.warning(f"Server {url} returned status {response.status_code}")
+            return StatusEnum.DOWN, round(response_time_ms, 2)
                 
     except httpx.TimeoutException:
         logger.warning(f"Server {url} timed out")

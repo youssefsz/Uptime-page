@@ -13,7 +13,12 @@ from fastapi.templating import Jinja2Templates
 from app.config import get_settings
 from app.database import close_db, init_db
 from app.routers import auth, servers
-from app.services.ping_service import start_ping_scheduler, stop_ping_scheduler
+from app.services.ping_service import (
+    start_ping_scheduler, 
+    stop_ping_scheduler,
+    init_http_client,
+    close_http_client
+)
 
 # Configure logging
 logging.basicConfig(
@@ -38,6 +43,9 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized")
     
+    # Initialize HTTP client
+    await init_http_client()
+    
     # Start ping scheduler
     start_ping_scheduler()
     logger.info("Ping scheduler started")
@@ -50,6 +58,9 @@ async def lifespan(app: FastAPI):
     # Stop ping scheduler
     await stop_ping_scheduler()
     logger.info("Ping scheduler stopped")
+    
+    # Close HTTP client
+    await close_http_client()
     
     # Close database connections
     await close_db()
