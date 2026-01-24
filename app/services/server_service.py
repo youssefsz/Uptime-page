@@ -1,6 +1,7 @@
 """Server CRUD operations."""
 
 from datetime import datetime, timedelta, timezone
+from collections import defaultdict
 
 from sqlalchemy import delete, desc, select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -161,7 +162,6 @@ async def get_all_servers_uptime_history(
     records = list(result.scalars().all())
     
     # Group by server_id
-    from collections import defaultdict
     history = defaultdict(list)
     for record in records:
         history[record.server_id].append(record)
@@ -348,6 +348,127 @@ async def _calculate_bars(
     return bars
 
 
+async def _calculate_bars_bulk(
+    db: AsyncSession,
+    server_ids: list[int],
+    now: datetime,
+    count: int,
+    resolution: str = "day"
+) -> dict[int, list[dict]]:
+    """Helper to calculate bars for multiple servers efficiently."""
+    
+    if not server_ids:
+        return {}
+
+    if resolution == "day":
+        since = now - timedelta(days=count)
+        trunc_interval = "day"
+    else:  # hour
+        since = now - timedelta(hours=count)
+        trunc_interval = "hour"
+        
+    # SQL Aggregation for performance
+    time_bucket = func.date_trunc(trunc_interval, UptimeRecord.timestamp).label("bucket")
+    
+    stmt = (
+        select(
+            UptimeRecord.server_id,
+            time_bucket,
+            func.count().label("total"),
+            func.sum(case((UptimeRecord.status == StatusEnum.UP, 1), else_=0)).label("up_count"),
+            func.sum(case((UptimeRecord.status == StatusEnum.DOWN, 1), else_=0)).label("down_count"),
+            func.avg(UptimeRecord.response_time_ms).label("avg_latency")
+        )
+        .where(
+            UptimeRecord.server_id.in_(server_ids),
+            UptimeRecord.timestamp >= since
+        )
+        .group_by(UptimeRecord.server_id, time_bucket)
+        .order_by(UptimeRecord.server_id, time_bucket)
+    )
+    
+    result = await db.execute(stmt)
+    rows = result.all()
+    
+    # Organize data by server_id -> time_key -> data
+    server_groups = defaultdict(dict)
+    
+    for row in rows:
+        bucket = row.bucket
+        if isinstance(bucket, datetime):
+             if resolution == "day":
+                 key = bucket.date()
+             else:
+                 key = bucket.replace(minute=0, second=0, microsecond=0)
+        else:
+            key = bucket
+            
+        server_groups[row.server_id][key] = {
+            "total": row.total,
+            "up": row.up_count or 0,
+            "down": row.down_count or 0,
+            "avg_latency": row.avg_latency or 0
+        }
+            
+    # Generate points for all servers
+    final_results = {}
+    
+    if resolution == "day":
+        start_current = (now - timedelta(days=count - 1)).date()
+    else:
+        start_current = (now - timedelta(hours=count - 1)).replace(minute=0, second=0, microsecond=0)
+        
+    for sid in server_ids:
+        bars = []
+        if resolution == "day":
+            current = start_current
+        else:
+            current = start_current
+            
+        server_data = server_groups.get(sid, {})
+        
+        for _ in range(count):
+            if resolution == "day":
+                key = current
+            else:
+                key = current
+                
+            data = server_data.get(key, {"total": 0, "up": 0, "down": 0, "avg_latency": 0})
+            total = data["total"]
+            
+            # Calculate uptime percentage
+            uptime_pct = (data["up"] / total * 100) if total > 0 else 0
+            avg_latency = data["avg_latency"]
+            
+            if total == 0:
+                status = "unknown"
+            elif uptime_pct < 50:
+                status = "down"
+            elif uptime_pct < 100:
+                status = "partial"
+            elif avg_latency >= 1000:
+                status = "degraded"
+            else:
+                status = "up"
+                
+            bars.append({
+                "date": datetime.combine(current, datetime.min.time()).replace(tzinfo=timezone.utc) if resolution == "day" else current,
+                "status": status,
+                "uptime_percentage": round(uptime_pct, 2),
+                "checks": total,
+                "avg_response_time_ms": round(avg_latency, 2) if total > 0 else None
+            })
+            
+            if resolution == "day":
+                current += timedelta(days=1)
+            else:
+                current += timedelta(hours=1)
+        
+        final_results[sid] = bars
+        
+    return final_results
+
+
 async def get_uptime_bars(
     db: AsyncSession, 
     server: Server,
@@ -367,20 +488,45 @@ async def get_servers_with_uptime_bars(
 ) -> list[dict]:
     """Get all servers with their uptime bar data."""
     servers = await get_servers(db)
+    
+    if not servers:
+        return []
+        
+    server_ids = [s.id for s in servers]
+    
+    # 1. Bulk fetch latest records
+    subq = (
+        select(
+            UptimeRecord.server_id,
+            func.max(UptimeRecord.timestamp).label("max_ts")
+        )
+        .where(UptimeRecord.server_id.in_(server_ids))
+        .group_by(UptimeRecord.server_id)
+        .subquery()
+    )
+    
+    stmt = (
+        select(UptimeRecord)
+        .join(
+            subq,
+            (UptimeRecord.server_id == subq.c.server_id) & 
+            (UptimeRecord.timestamp == subq.c.max_ts)
+        )
+    )
+    
+    latest_records_result = await db.execute(stmt)
+    latest_records = {r.server_id: r for r in latest_records_result.scalars().all()}
+    
+    # 2. Bulk fetch uptime bars
+    # FORCE 24 HOURS ONLY - As explicitly requested (matching previous logic)
+    now = datetime.now(timezone.utc)
+    bars_map = await _calculate_bars_bulk(db, server_ids, now, count=24, resolution="hour")
+    
     result = []
     
     for server in servers:
-        # Get the latest uptime record for this server
-        latest_record = await db.execute(
-            select(UptimeRecord)
-            .where(UptimeRecord.server_id == server.id)
-            .order_by(desc(UptimeRecord.timestamp))
-            .limit(1)
-        )
-        record = latest_record.scalar_one_or_none()
-        
-        # Get uptime bars
-        bars = await get_uptime_bars(db, server, days)
+        record = latest_records.get(server.id)
+        bars = bars_map.get(server.id, [])
         
         # Calculate overall uptime percentage from bars
         total_checks = sum(b["checks"] for b in bars)
