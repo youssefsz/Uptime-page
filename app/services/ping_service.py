@@ -26,7 +26,8 @@ async def init_http_client() -> None:
     """Initialize the global HTTP client."""
     global _http_client
     if _http_client is None:
-        limits = httpx.Limits(max_keepalive_connections=20, max_connections=100)
+        # Increase limits for better concurrency handling
+        limits = httpx.Limits(max_keepalive_connections=50, max_connections=100)
         _http_client = httpx.AsyncClient(
             limits=limits,
             timeout=settings.ping_timeout_seconds,
@@ -100,10 +101,18 @@ async def ping_all_servers() -> None:
                 logger.debug("No servers to ping")
                 return
             
-            # Ping all servers concurrently
+            # Use a semaphore to limit concurrent pings to avoid saturating resources on VPS
+            # This helps smooth out the "spiky" latency behavior
+            sem = asyncio.Semaphore(10)
+            
+            async def bounded_ping(server: Server):
+                async with sem:
+                    await ping_and_record(db, server)
+            
+            # Ping all servers concurrently with limited concurrency
             tasks = []
             for server in servers:
-                tasks.append(ping_and_record(db, server))
+                tasks.append(bounded_ping(server))
             
             await asyncio.gather(*tasks, return_exceptions=True)
             await db.commit()
