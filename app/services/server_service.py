@@ -482,12 +482,19 @@ async def get_uptime_bars(
     return await _calculate_bars(db, server.id, now, count=24, resolution="hour")
 
 
+import time
+import logging
+
 async def get_servers_with_uptime_bars(
     db: AsyncSession,
     days: int = 30
 ) -> list[dict]:
     """Get all servers with their uptime bar data."""
+    start_time = time.perf_counter()
+    logger = logging.getLogger(__name__)
+    
     servers = await get_servers(db)
+    t1 = time.perf_counter()
     
     if not servers:
         return []
@@ -516,11 +523,13 @@ async def get_servers_with_uptime_bars(
     
     latest_records_result = await db.execute(stmt)
     latest_records = {r.server_id: r for r in latest_records_result.scalars().all()}
+    t2 = time.perf_counter()
     
     # 2. Bulk fetch uptime bars
     # FORCE 24 HOURS ONLY - As explicitly requested (matching previous logic)
     now = datetime.now(timezone.utc)
     bars_map = await _calculate_bars_bulk(db, server_ids, now, count=24, resolution="hour")
+    t3 = time.perf_counter()
     
     result = []
     
@@ -551,6 +560,9 @@ async def get_servers_with_uptime_bars(
             "uptime_bars": bars
         }
         result.append(server_data)
+    
+    t4 = time.perf_counter()
+    logger.info(f"PERF: Total: {t4-start_time:.4f}s | Servers: {t1-start_time:.4f}s | Latest: {t2-t1:.4f}s | Bars: {t3-t2:.4f}s | Process: {t4-t3:.4f}s")
     
     return result
 
