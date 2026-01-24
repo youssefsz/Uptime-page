@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import delete, desc, select
+from sqlalchemy import delete, desc, select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -237,44 +237,58 @@ async def _calculate_bars(
     resolution: str = "day"
 ) -> list[dict]:
     """Helper to calculate bars for a given resolution and count."""
-    from collections import defaultdict
     
     if resolution == "day":
         since = now - timedelta(days=count)
-        # records are fetched from 'since' to 'now'
+        trunc_interval = "day"
     else:  # hour
         since = now - timedelta(hours=count)
+        trunc_interval = "hour"
         
-    result = await db.execute(
-        select(UptimeRecord)
+    # SQL Aggregation for performance
+    time_bucket = func.date_trunc(trunc_interval, UptimeRecord.timestamp).label("bucket")
+    
+    stmt = (
+        select(
+            time_bucket,
+            func.count().label("total"),
+            func.sum(case((UptimeRecord.status == StatusEnum.UP, 1), else_=0)).label("up_count"),
+            func.sum(case((UptimeRecord.status == StatusEnum.DOWN, 1), else_=0)).label("down_count"),
+            func.avg(UptimeRecord.response_time_ms).label("avg_latency")
+        )
         .where(
             UptimeRecord.server_id == server_id,
             UptimeRecord.timestamp >= since
         )
-        .order_by(UptimeRecord.timestamp)
+        .group_by(time_bucket)
+        .order_by(time_bucket)
     )
     
-    records = list(result.scalars().all())
+    result = await db.execute(stmt)
+    rows = result.all()
     
-    # Group results
-    # Each group stores: up count, down count, total count, and total response time (for avg)
-    grouped_data = defaultdict(lambda: {"up": 0, "down": 0, "total": 0, "response_time_sum": 0.0, "response_time_count": 0})
-    
-    for record in records:
-        if resolution == "day":
-            key = record.timestamp.date()
+    # Convert rows to dict for easy lookup
+    grouped_data = {}
+    for row in rows:
+        bucket = row.bucket
+        # Ensure we match the key format used in the generation loop
+        if isinstance(bucket, datetime):
+             if resolution == "day":
+                 key = bucket.date()
+             else:
+                 key = bucket.replace(minute=0, second=0, microsecond=0)
         else:
-            key = record.timestamp.replace(minute=0, second=0, microsecond=0)
-        
-        grouped_data[key]["total"] += 1
-        if record.status == StatusEnum.UP:
-            grouped_data[key]["up"] += 1
-        else:
-            grouped_data[key]["down"] += 1
+            # Fallback if driver returns something else (unlikely with asyncpg)
+            key = bucket
             
-        if record.response_time_ms is not None:
-            grouped_data[key]["response_time_sum"] += record.response_time_ms
-            grouped_data[key]["response_time_count"] += 1
+        grouped_data[key] = {
+            "total": row.total,
+            "up": row.up_count or 0,
+            "down": row.down_count or 0,
+            "response_time_sum": 0, # Not needed as we have avg
+            "response_time_count": 0, # Not needed as we have avg
+            "avg_latency": row.avg_latency or 0
+        }
             
     bars = []
     
@@ -293,10 +307,12 @@ async def _calculate_bars(
         else:
             key = current
             
-        data = grouped_data.get(key, {"up": 0, "down": 0, "total": 0, "response_time_sum": 0, "response_time_count": 0})
+        data = grouped_data.get(key, {"total": 0, "up": 0, "down": 0, "avg_latency": 0})
         total = data["total"]
+        
+        # Calculate uptime percentage
         uptime_pct = (data["up"] / total * 100) if total > 0 else 0
-        avg_latency = (data["response_time_sum"] / data["response_time_count"]) if data["response_time_count"] > 0 else 0
+        avg_latency = data["avg_latency"]
         
         # Professional Status Logic:
         # - Up (Green): 100% Up and < 1000ms latency
@@ -340,21 +356,9 @@ async def get_uptime_bars(
     """Get aggregated uptime data for bar visualization with dynamic resolution."""
     now = datetime.now(timezone.utc)
     
-    # Calculate age in days
-    # age = now - server.created_at
-    
-    # User requested to always show last 24 hours
+    # FORCE 24 HOURS ONLY - As explicitly requested
+    # We ignore the requested_days and server age
     return await _calculate_bars(db, server.id, now, count=24, resolution="hour")
-    
-    # if age < timedelta(days=1):
-    #     # If less than a day, show last 24 hours (hourly)
-    #     return await _calculate_bars(db, server.id, now, count=24, resolution="hour")
-    # elif age < timedelta(days=7):
-    #     # If less than a week, show last 7 days (daily)
-    #     return await _calculate_bars(db, server.id, now, count=7, resolution="day")
-    # else:
-    #     # Otherwise show last 30 days (or requested_days)
-    #     return await _calculate_bars(db, server.id, now, count=requested_days, resolution="day")
 
 
 async def get_servers_with_uptime_bars(
