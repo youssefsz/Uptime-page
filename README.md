@@ -2,6 +2,10 @@
 
 A lightweight, self-hosted uptime monitoring system built with FastAPI.
 
+## Preview
+
+![Uptime Monitoring Dashboard](redirect-page/splash.png)
+
 ## Features
 
 - Public status page with live updates
