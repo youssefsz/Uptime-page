@@ -1,6 +1,8 @@
 """Application configuration settings."""
 
 from functools import lru_cache
+
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,6 +35,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     debug: bool = False
+    cors_origins: list[str] = Field(default_factory=list)
 
 
 @lru_cache

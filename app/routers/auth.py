@@ -3,15 +3,23 @@
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import authenticate_user, create_access_token, get_current_user
+from app.auth import (
+    authenticate_user,
+    create_access_token,
+    get_current_user,
+    get_password_hash,
+)
 from app.config import get_settings
 from app.database import get_db
 from app.limiter import limiter
+from app.models import User
 from app.schemas import LoginRequest, Token
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 settings = get_settings()
@@ -81,8 +89,6 @@ async def verify_token(
     return {"valid": True, "username": current_user}
 
 
-from pydantic import BaseModel
-
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str
@@ -102,10 +108,6 @@ async def change_password(
         )
     
     # Update password
-    from app.auth import get_password_hash
-    from app.models import User
-    from sqlalchemy import select
-    
     result = await db.execute(select(User).where(User.username == current_user))
     user = result.scalar_one()
     

@@ -9,15 +9,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.config import get_settings
 from app.database import close_db, init_db
+from app.limiter import limiter
 from app.routers import auth, servers
 from app.services.ping_service import (
-    start_ping_scheduler, 
-    stop_ping_scheduler,
+    close_http_client,
     init_http_client,
-    close_http_client
+    start_ping_scheduler,
+    stop_ping_scheduler,
 )
 
 # Configure logging
@@ -28,6 +32,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
+APP_VERSION = "0.1.0"
 
 # Get base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -71,16 +76,11 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Uptime Monitor",
     description="A lightweight uptime monitoring system",
-    version="1.0.0",
+    version=APP_VERSION,
     lifespan=lifespan
 )
 
 # Setup Rate Limiting
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
-from app.limiter import limiter
-
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
@@ -88,10 +88,10 @@ app.add_middleware(SlowAPIMiddleware)
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.cors_origins,
+    allow_credentials=bool(settings.cors_origins),
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # Mount static files
@@ -156,7 +156,7 @@ async def api_info():
     """API information endpoint."""
     return {
         "name": "Uptime Monitor API",
-        "version": "1.0.0",
+        "version": APP_VERSION,
         "endpoints": {
             "auth": "/api/auth",
             "servers": "/api/servers"
