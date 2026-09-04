@@ -34,7 +34,7 @@ services:
     labels:
       - "traefik.enable=true"
       # Router - Distinct name but SAME Host rule
-      - "traefik.http.routers.uptime-page-blue.rule=Host(`uptime.youssef.run.place`)"
+      - "traefik.http.routers.uptime-page-blue.rule=Host(`uptime.youssef.run.place`) || Host(`uptime.dhibi.tn`)"
       - "traefik.http.routers.uptime-page-blue.entrypoints=websecure"
       - "traefik.http.routers.uptime-page-blue.tls.certresolver=myresolver"
       - "traefik.http.routers.uptime-page-blue.middlewares=default-chain@file"
@@ -50,7 +50,7 @@ services:
     labels:
       - "traefik.enable=true"
       # Router - Distinct name but SAME Host rule
-      - "traefik.http.routers.uptime-page-green.rule=Host(`uptime.youssef.run.place`)"
+      - "traefik.http.routers.uptime-page-green.rule=Host(`uptime.youssef.run.place`) || Host(`uptime.dhibi.tn`)"
       - "traefik.http.routers.uptime-page-green.entrypoints=websecure"
       - "traefik.http.routers.uptime-page-green.tls.certresolver=myresolver"
       - "traefik.http.routers.uptime-page-green.middlewares=default-chain@file"
