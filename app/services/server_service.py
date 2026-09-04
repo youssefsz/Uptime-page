@@ -70,15 +70,14 @@ async def update_server(
 
 
 async def delete_server(db: AsyncSession, server_id: int) -> bool:
-    """Delete a server."""
-    server = await get_server(db, server_id)
-    
-    if not server:
-        return False
-    
-    await db.delete(server)
+    """Delete a server and let PostgreSQL cascade its uptime history."""
+    result = await db.execute(
+        delete(Server)
+        .where(Server.id == server_id)
+        .execution_options(synchronize_session=False)
+    )
     await db.flush()
-    return True
+    return bool(result.rowcount)
 
 
 async def reorder_servers(
