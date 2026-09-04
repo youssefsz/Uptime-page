@@ -1,11 +1,12 @@
 """Server CRUD operations."""
 
-from datetime import datetime, timedelta, timezone
+import logging
+import time
 from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import delete, desc, select, func, case
+from sqlalchemy import case, delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.models import Server, StatusEnum, UptimeRecord
 from app.schemas import ServerCreate, ServerUpdate, ServerWithStatus
@@ -307,10 +308,8 @@ async def _calculate_bars(
     # Generate points
     if resolution == "day":
         current = (now - timedelta(days=count - 1)).date()
-        end = now.date()
     else:
         current = (now - timedelta(hours=count - 1)).replace(minute=0, second=0, microsecond=0)
-        end = now.replace(minute=0, second=0, microsecond=0)
         
     loop_count = count
     for i in range(loop_count):
@@ -493,9 +492,6 @@ async def get_uptime_bars(
     # We ignore the requested_days and server age
     return await _calculate_bars(db, server.id, now, count=24, resolution="hour")
 
-
-import time
-import logging
 
 async def get_servers_with_uptime_bars(
     db: AsyncSession,

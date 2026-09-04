@@ -3,12 +3,17 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+from jwt import InvalidTokenError
 from passlib.context import CryptContext
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
+from app.database import get_db
+from app.models import User
 from app.schemas import TokenData
 
 settings = get_settings()
@@ -51,13 +56,6 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return encoded_jwt
 
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_db
-from app.models import User
-
-# ... existing imports ...
-
 async def authenticate_user(db: AsyncSession, username: str, password: str) -> bool:
     """Authenticate user against database credentials."""
     result = await db.execute(select(User).where(User.username == username))
@@ -96,7 +94,7 @@ async def get_current_user(
         
         token_data = TokenData(username=username)
         
-    except JWTError:
+    except InvalidTokenError:
         raise credentials_exception
     
     # Check if user exists in DB

@@ -1,8 +1,8 @@
 
 import asyncio
-import httpx
-import sys
 import time
+
+import httpx
 
 BASE_URL = "http://localhost:8000/api/servers"
 

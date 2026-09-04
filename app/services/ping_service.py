@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import time
-from contextlib import asynccontextmanager
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
