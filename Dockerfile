@@ -4,6 +4,7 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Set work directory
 WORKDIR /app
@@ -15,13 +16,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies from pyproject.toml
-# We'll use pip to install the dependencies listed in pyproject.toml
-# It's often easier to export them to requirements.txt or install directly if using a tool like poetry or pdm, 
-# but for simple pyproject.toml with 'project.dependencies', pip can usually handle it or we can just install '.'
-COPY pyproject.toml .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir .
+# Install the exact dependency versions tested and committed in uv.lock.
+# Keeping this layer ahead of the source copy preserves Docker's dependency cache.
+COPY pyproject.toml uv.lock README.md ./
+RUN pip install --no-cache-dir uv==0.9.26 && \
+    uv sync --frozen --no-dev --no-install-project
 
 # Copy project
 COPY . .

@@ -50,6 +50,7 @@ class Server(Base):
         "UptimeRecord",
         back_populates="server",
         cascade="all, delete-orphan",
+        passive_deletes=True,
         # lazy="selectin"  # Removed eager loading for performance
     )
 

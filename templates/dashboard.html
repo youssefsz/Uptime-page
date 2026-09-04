@@ -306,6 +306,8 @@
 <script>
     const API_BASE = '/api';
     const REFRESH_INTERVAL = 30000;
+    const SERVER_CACHE_KEY = 'dashboard_servers_cache';
+    const PUBLIC_SERVER_CACHE_KEY = 'public_servers_cache';
 
     let servers = [];
     let currentServerId = null;
@@ -325,6 +327,11 @@
             'Authorization': `Bearer ${getToken()}`,
             'Content-Type': 'application/json'
         };
+    }
+
+    function invalidateServerCaches() {
+        localStorage.removeItem(SERVER_CACHE_KEY);
+        localStorage.removeItem(PUBLIC_SERVER_CACHE_KEY);
     }
 
     // Check authentication
@@ -610,16 +617,15 @@
     }
 
     // Load servers
-    async function loadServers() {
+    async function loadServers(forceRefresh = false) {
         const serverList = document.getElementById('serverList');
         const emptyState = document.getElementById('emptyState');
         const chartContainer = document.getElementById('chartContainer');
-        const CACHE_KEY = 'dashboard_servers_cache';
         const CACHE_DURATION = 60 * 1000; // 1 minute
 
         // Check cache first
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached && !isReorderMode) { // Don't use cache in reorder mode
+        const cached = localStorage.getItem(SERVER_CACHE_KEY);
+        if (cached && !isReorderMode && !forceRefresh) { // Don't use cache after mutations or in reorder mode
              try {
                 const { timestamp, data } = JSON.parse(cached);
                 const now = Date.now();
@@ -632,7 +638,7 @@
                 }
             } catch (e) {
                 console.error('Cache parse error', e);
-                localStorage.removeItem(CACHE_KEY);
+                localStorage.removeItem(SERVER_CACHE_KEY);
             }
         }
 
@@ -652,7 +658,7 @@
             servers = await response.json();
             
             // Update cache
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
+            localStorage.setItem(SERVER_CACHE_KEY, JSON.stringify({
                 timestamp: Date.now(),
                 data: servers
             }));
@@ -785,7 +791,8 @@
             }
 
             closeModal();
-            loadServers();
+            invalidateServerCaches();
+            await loadServers(true);
             showToast(id ? 'Server updated' : 'Server added');
 
         } catch (error) {
@@ -797,8 +804,13 @@
     async function deleteServer() {
         if (!currentServerId) return;
 
+        const serverId = currentServerId;
+        const deleteButton = document.getElementById('confirmDeleteBtn');
+        deleteButton.disabled = true;
+        deleteButton.textContent = 'Deleting…';
+
         try {
-            const response = await fetch(`${API_BASE}/servers/${currentServerId}`, {
+            const response = await fetch(`${API_BASE}/servers/${serverId}`, {
                 method: 'DELETE',
                 headers: authHeaders()
             });
@@ -808,12 +820,16 @@
             }
 
             closeDeleteModal();
-            loadServers();
+            invalidateServerCaches();
+            await loadServers(true);
             showToast('Server deleted');
 
         } catch (error) {
             console.error('Error deleting server:', error);
             showToast('Failed to delete server', 'error');
+        } finally {
+            deleteButton.disabled = false;
+            deleteButton.textContent = 'Delete';
         }
     }
 
@@ -830,7 +846,8 @@
 
             const result = await response.json();
             showToast(`Ping complete: ${result.status} (${formatResponseTime(result.response_time_ms)})`);
-            loadServers();
+            invalidateServerCaches();
+            await loadServers(true);
 
         } catch (error) {
             console.error('Error pinging server:', error);
@@ -1140,7 +1157,8 @@
 
             showToast('Server order saved');
             // Reload to get updated order from server
-            loadServers();
+            invalidateServerCaches();
+            await loadServers(true);
 
         } catch (error) {
             console.error('Error saving server order:', error);

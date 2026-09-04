@@ -70,6 +70,10 @@ async def delete_server(
             detail="Server not found"
         )
 
+    # The dashboard refreshes immediately after a 204 response. Commit here so
+    # the deletion is visible before the client issues its follow-up GET.
+    await db.commit()
+
 
 @router.post("/reorder", status_code=status.HTTP_200_OK)
 async def reorder_servers(

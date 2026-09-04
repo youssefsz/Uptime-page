@@ -113,19 +113,31 @@ app.include_router(servers.router, prefix="/api")
 @app.get("/", response_class=HTMLResponse)
 async def public_status_page(request: Request):
     """Serve the public status page."""
-    return templates.TemplateResponse("public.html", {"request": request})
+    return templates.TemplateResponse(
+        request=request,
+        name="public.html",
+        context={"request": request},
+    )
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard_page(request: Request):
     """Serve the admin dashboard page."""
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={"request": request},
+    )
 
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     """Serve the login page."""
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={"request": request},
+    )
 
 
 # ============== Health Check ==============
